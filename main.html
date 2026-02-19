@@ -1,236 +1,128 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>X5-MD • WhatsApp Session</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg: #f5f5f5;
-      --surface: rgba(255,255,255,0.9);
-      --border: rgba(0,0,0,0.1);
-      --accent: #1e88e5;
-      --tg: #2CA5E0;
-      --wa: #25d366;
-      --text: #222;
-      --muted: rgba(34,34,34,0.5);
-    }
-
-    html { width: 100%; min-height: 100%; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Syne', sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 32px 16px;
-    }
-
-    .wrapper {
-      max-width: 720px;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .badge {
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      font-weight: 300;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--accent);
-      background: rgba(30,136,229,0.1);
-      border: 1px solid rgba(30,136,229,0.2);
-      padding: 6px 18px;
-      border-radius: 100px;
-      margin-bottom: 24px;
-    }
-
-    .brand {
-      text-align: center;
-      margin-bottom: 16px;
-    }
-
-    .brand-name {
-      font-size: clamp(3.5rem, 10vw, 6.5rem);
-      font-weight: 800;
-      line-height: 1;
-      letter-spacing: -2px;
-      background: linear-gradient(135deg, #222 0%, #555 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .brand-name .accent {
-      background: var(--accent);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .brand-sub {
-      font-family: 'DM Mono', monospace;
-      font-size: clamp(10px, 2vw, 13px);
-      font-weight: 300;
-      color: var(--muted);
-      letter-spacing: 5px;
-      text-transform: uppercase;
-      margin-top: 8px;
-    }
-
-    .divider {
-      width: 60px;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--accent), transparent);
-      margin: 24px auto 32px;
-    }
-
-    .grid-main {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      width: 100%;
-      margin-bottom: 24px;
-    }
-
-    .grid-social {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      width: 100%;
-    }
-
-    .card {
-      position: relative;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 28px 22px;
-      cursor: pointer;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      gap: 12px;
-      text-decoration: none;
-      color: inherit;
-      transition: border-color 0.3s, transform 0.25s, box-shadow 0.3s;
-      backdrop-filter: blur(12px);
-    }
-
-    .card:hover {
-      border-color: rgba(0,0,0,0.15);
-      transform: translateY(-3px);
-      box-shadow: 0 12px 32px rgba(0,0,0,0.1);
-    }
-
-    .card-icon {
-      width: 42px; height: 42px;
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px;
-      background: rgba(30,136,229,0.08);
-      border: 1px solid rgba(30,136,229,0.15);
-      flex-shrink: 0;
-    }
-
-    .card-label { font-weight: 700; font-size: 16px; }
-    .card-desc { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
-    .card-arrow { margin-left: auto; font-size: 18px; }
-
-    .footer {
-      margin-top: 32px;
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      font-weight: 300;
-      color: var(--muted);
-      text-align: center;
-    }
-    .footer a { color: var(--accent); text-decoration: none; }
-    .footer a:hover { text-decoration: underline; }
-
-    @media (max-width: 520px) {
-      .grid-main { grid-template-columns: 1fr; }
-      .grid-social { grid-template-columns: 1fr; }
-      .card { padding: 18px 16px; gap: 10px; }
-      .card-icon { width: 36px; height: 36px; font-size: 16px; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>X5-MD • WhatsApp Session</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Inter',sans-serif;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg,#e6f0ff 0%,#ffffff 100%);
+  padding:20px;
+}
+.wrapper{
+  width:100%;
+  max-width:500px;
+  padding:20px;
+  text-align:center;
+}
+.card{
+  background:#fff;
+  border-radius:24px;
+  padding:25px 20px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:15px;
+  cursor:pointer;
+  text-decoration:none;
+  color:#111;
+  box-shadow:0 15px 40px rgba(0,0,0,0.08);
+  transition:.25s;
+}
+.card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 15px 40px rgba(0,114,255,0.25);
+}
+.card-icon{
+  width:50px;
+  height:50px;
+  border-radius:12px;
+  background:linear-gradient(135deg,#00c6ff,#0072ff);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:24px;
+  color:white;
+  flex-shrink:0;
+}
+.card-content{
+  text-align:left;
+}
+.card-content h2{
+  font-size:16px;
+  font-weight:700;
+  margin-bottom:4px;
+}
+.card-content p{
+  font-size:13px;
+  color:#6b7280;
+}
+.footer{
+  margin-top:25px;
+  font-size:12px;
+  color:#9ca3af;
+}
+.footer a{
+  color:#0072ff;
+  text-decoration:none;
+}
+.footer a:hover{
+  text-decoration:underline;
+}
+</style>
 </head>
 <body>
+<div class="wrapper">
 
-  <div class="wrapper">
-    <div class="badge">✦ Session Generator</div>
+  <img src="https://o.uguu.se/eTvkJDeN.jpg" alt="Logo" style="width:80px;height:80px;border-radius:18px;margin-bottom:20px;">
 
-    <div class="brand">
-      <div class="brand-name">X5<span class="accent">-MD</span></div>
-      <div class="brand-sub">WhatsApp Bot Platform</div>
+  <h1 style="margin-bottom:10px;">X5-MD WhatsApp Session</h1>
+  <p style="margin-bottom:25px;color:#6b7280;">Choose an action below to link your WhatsApp</p>
+
+  <a class="card" href="/qrpage">
+    <div class="card-icon">📷</div>
+    <div class="card-content">
+      <h2>QR Code</h2>
+      <p>Scan to link your device</p>
     </div>
+  </a>
 
-    <div class="divider"></div>
-
-    <div class="grid-main">
-      <a class="card" onclick="window.open('/qrpage')" href="javascript:void(0)">
-        <div class="card-icon">⬛</div>
-        <div>
-          <div class="card-label">QR Code</div>
-          <div class="card-desc">Scan to link your device</div>
-        </div>
-        <span class="card-arrow">↗</span>
-      </a>
-
-      <a class="card" onclick="window.open('/pair')" href="javascript:void(0)">
-        <div class="card-icon">🔑</div>
-        <div>
-          <div class="card-label">Pair Code</div>
-          <div class="card-desc">Link via phone number</div>
-        </div>
-        <span class="card-arrow">↗</span>
-      </a>
+  <a class="card" href="/pair">
+    <div class="card-icon">🔑</div>
+    <div class="card-content">
+      <h2>Pair Code</h2>
+      <p>Link via phone number</p>
     </div>
+  </a>
 
-    <div class="grid-social">
-      <a class="card" onclick="window.open('https://github.com/BrokenVzn')" href="javascript:void(0)">
-        <div class="card-icon">🐙</div>
-        <div>
-          <div class="card-label">GitHub</div>
-          <div class="card-desc">Source & releases</div>
-        </div>
-        <span class="card-arrow">↗</span>
-      </a>
-
-      <a class="card" onclick="window.open('https://wa.me/1234567890')" href="javascript:void(0)">
-        <div class="card-icon">💬</div>
-        <div>
-          <div class="card-label">WhatsApp</div>
-          <div class="card-desc">Join channel</div>
-        </div>
-        <span class="card-arrow">↗</span>
-      </a>
-
-      <a class="card" onclick="window.open('https://t.me/BrokenVzn')" href="javascript:void(0)">
-        <div class="card-icon">✈️</div>
-        <div>
-          <div class="card-label">Telegram</div>
-          <div class="card-desc">Support group</div>
-        </div>
-        <span class="card-arrow">↗</span>
-      </a>
+  <a class="card" href="https://github.com/BrokenVzn" target="_blank">
+    <div class="card-icon">🐙</div>
+    <div class="card-content">
+      <h2>GitHub</h2>
+      <p>Source & releases</p>
     </div>
+  </a>
 
-    <div class="footer">
-      Built by <a href="https://github.com/BrokenVzn" target="_blank">Broken Vzn</a> &nbsp;•&nbsp; X5-MD v5
+  <a class="card" href="https://t.me/BrokenVzn" target="_blank">
+    <div class="card-icon">✈️</div>
+    <div class="card-content">
+      <h2>Telegram</h2>
+      <p>Support group</p>
     </div>
+  </a>
+
+  <div class="footer">
+    © 2026 X5-MD • Built by <a href="https://github.com/BrokenVzn" target="_blank">Broken Vzn</a>
   </div>
 
+</div>
 </body>
 </html>
