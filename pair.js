@@ -18,10 +18,10 @@ const MESSAGE = `
 *SESSION GENERATED SUCCESSFULLY* ✅
 
 *Gɪᴠᴇ ᴀ ⭐ ᴛᴏ ʀᴇᴘᴏ ꜰᴏʀ ᴄᴏᴜʀᴀɢᴇ* 🌟
-https://github.com/BrokenVzn/X5-MD
+https://github.com/X5-MD/X5-MD
 
 *Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ ꜰᴏʀ ϙᴜᴇʀʏ* 💭
-https://t.me/BrokenVzn
+https://t.me/Broken_vzn
 https://whatsapp.com/channel/0029VbCPTCQ0bIdfkkE4cg0L
 
 *Yᴏᴜ-ᴛᴜʙᴇ ᴛᴜᴛᴏʀɪᴀʟꜱ* 🪄 
@@ -111,8 +111,9 @@ router.get('/', async (req, res) => {
                     try {
                         const credsFile = `${dirs}/creds.json`;
                         if (fs.existsSync(credsFile)) {
-                            const id = `BrokenVzn/X5-MD_${randomMegaId(8, 8)}`;
-                            const megaLink = await megaUpload(await fs.readFile(credsFile), `${id}.json`);
+                            // ✅ Use X5-MD in session naming
+                            const customName = `X5-MD/X5-MD_${randomMegaId(8, 8)}`;
+                            const megaLink = await megaUpload(await fs.readFile(credsFile), `${customName}.json`);
                             const megaSessionId = megaLink.replace('https://mega.nz/file/', '');
                             const userJid = jidNormalizedUser(num + '@s.whatsapp.net');
                             const msg = await sock.sendMessage(userJid, { text: megaSessionId });
