@@ -12,35 +12,33 @@ const router = express.Router();
 const MAX_RECONNECT_ATTEMPTS = 3;
 const SESSION_TIMEOUT = 60000;
 
-// Custom message template
-function formatMessage(sessionId, number) {
-    return `*SESSION GENERATED SUCCESSFULLY* ✅
+const MESSAGE = `
+*SESSION GENERATED SUCCESSFULLY* ✅
 
-Session ID: ${sessionId}
-Linked to number: ${number}
+*Gɪᴠᴇ ᴀ ⭐ ᴛᴏ ᴏᴜʀ ʀᴇᴘᴏ ꜰᴏʀ ᴄᴏᴜʀᴀɢᴇ* 🌟
+https://github.com/BrokenVzn/X5-MD
 
-*Give a ⭐ to the repo for courage* 🌟
-https://github.com/Neaterry6/X5-MD
-
-*Support Group for Queries* 💭
-https://t.me/Broken_vzn
-https://chat.whatsapp.com/FEcIqQ8blnR7sr1oZ3Nqh6
+*Support group for queries* 💭
+https://t.me/BrokenVzn
+https://whatsapp.com/channel/0029VbCPTCQ0bIdfkkE4cg0L
 
 *YouTube Tutorials* 🪄
 https://youtube.com/@brokenvzn-s7s
 
-*X5-MD • WhatsApp Bot* 🥀`;
+*X5-MD • WhatsApp Bot* 🥀
+`;
+
+function randomMegaId(len = 6, numLen = 4) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let out = '';
+    for (let i = 0; i < len; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
+    return `${out}${Math.floor(Math.random() * Math.pow(10, numLen))}`;
 }
 
-// Random session hash
-function randomSessionHash(len = 32) {
-    const chars = 'abcdef0123456789';
-    let hash = '';
-    for (let i = 0; i < len; i++) hash += chars.charAt(Math.floor(Math.random() * chars.length));
-    return hash;
+function generateSessionId() {
+    return `BrokenVzn/X5-MD_${Math.random().toString(36).substring(2, 10)}`;
 }
 
-// Remove folder/file safely
 async function removeFile(FilePath) {
     try {
         if (!fs.existsSync(FilePath)) return false;
@@ -52,17 +50,14 @@ async function removeFile(FilePath) {
     }
 }
 
-// QR endpoint
 router.get('/', async (req, res) => {
-    const number = req.query.number?.replace(/\D/g, '');
-    if (!number) return res.status(400).send({ code: 'Please provide a valid phone number!' });
-
-    const sessionId = `BrokenVzn/X5-MD_${randomSessionHash(16)}`;
-    const dirs = `./qr_sessions/session_${Date.now().toString()}_${Math.random().toString(36).substring(2, 9)}`;
+    const sessionId = generateSessionId();
+    const dirs = `./qr_sessions/session_${sessionId}`;
     if (!fs.existsSync('./qr_sessions')) await fs.mkdir('./qr_sessions', { recursive: true });
 
     let qrGenerated = false;
     let sessionCompleted = false;
+    let responseSent = false;
     let reconnectAttempts = 0;
     let currentSocket = null;
     let timeoutHandle = null;
@@ -71,19 +66,38 @@ router.get('/', async (req, res) => {
     async function cleanup(reason = 'unknown') {
         if (isCleaningUp) return;
         isCleaningUp = true;
-        console.log(`🧹 Cleaning up QR session ${sessionId} - Reason: ${reason}`);
-        if (timeoutHandle) clearTimeout(timeoutHandle);
+
+        console.log(`🧹 Cleaning up session ${sessionId} - Reason: ${reason}`);
+
+        if (timeoutHandle) {
+            clearTimeout(timeoutHandle);
+            timeoutHandle = null;
+        }
+
         if (currentSocket) {
-            try { currentSocket.ev.removeAllListeners(); await currentSocket.end(); } catch {}
+            try {
+                currentSocket.ev.removeAllListeners();
+                await currentSocket.end();
+            } catch (e) {
+                console.error('Error closing socket:', e);
+            }
             currentSocket = null;
         }
-        setTimeout(async () => { await removeFile(dirs); }, 5000);
+
+        setTimeout(async () => {
+            await removeFile(dirs);
+        }, 5000);
     }
 
     async function initiateSession() {
         if (sessionCompleted || isCleaningUp) return;
         if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-            return res.status(503).send({ code: 'Connection failed after multiple attempts' });
+            if (!responseSent && !res.headersSent) {
+                responseSent = true;
+                res.status(503).send({ code: 'Connection failed after multiple attempts' });
+            }
+            await cleanup('max_reconnects');
+            return;
         }
 
         if (!fs.existsSync(dirs)) await fs.mkdir(dirs, { recursive: true });
@@ -91,8 +105,9 @@ router.get('/', async (req, res) => {
 
         try {
             const { version } = await fetchLatestBaileysVersion();
+
             if (currentSocket) {
-                try { currentSocket.ev.removeAllListeners(); await currentSocket.end(); } catch {}
+                try { currentSocket.ev.removeAllListeners(); await currentSocket.end(); } catch (e) {}
             }
 
             currentSocket = makeWASocket({
@@ -116,42 +131,52 @@ router.get('/', async (req, res) => {
             const sock = currentSocket;
 
             const handleQRCode = async (qr) => {
-                if (qrGenerated || sessionCompleted || isCleaningUp) return;
+                if (qrGenerated || responseSent || sessionCompleted || isCleaningUp) return;
                 qrGenerated = true;
 
                 try {
                     const qrDataURL = await QRCode.toDataURL(qr, { errorCorrectionLevel: 'M' });
-                    res.send({
-                        qr: qrDataURL,
-                        message: 'QR Code Generated! Scan with WhatsApp app.',
-                        instructions: [
-                            '1. Open WhatsApp on your phone',
-                            '2. Go to Settings > Linked Devices',
-                            '3. Tap "Link a Device"',
-                            '4. Scan the QR code above'
-                        ]
-                    });
-                    console.log('📱 QR Code sent to client');
+                    if (!responseSent && !res.headersSent) {
+                        responseSent = true;
+                        res.send({
+                            qr: qrDataURL,
+                            message: 'QR Code Generated! Scan with WhatsApp app.',
+                            instructions: [
+                                '1. Open WhatsApp on your phone',
+                                '2. Go to Settings > Linked Devices',
+                                '3. Tap "Link a Device"',
+                                '4. Scan the QR code above'
+                            ],
+                            sessionId
+                        });
+                        console.log('📱 QR Code sent to client');
+                    }
                 } catch (err) {
                     console.error('Error generating QR code:', err);
-                    res.status(500).send({ code: 'Failed to generate QR code' });
+                    if (!responseSent && !res.headersSent) {
+                        responseSent = true;
+                        res.status(500).send({ code: 'Failed to generate QR code' });
+                    }
                     await cleanup('qr_error');
                 }
             };
 
             sock.ev.on('connection.update', async (update) => {
                 if (isCleaningUp) return;
+
                 const { connection, lastDisconnect, qr, isNewLogin } = update;
 
                 if (qr && !qrGenerated && !sessionCompleted) await handleQRCode(qr);
 
                 if (connection === 'open' && !sessionCompleted) {
                     sessionCompleted = true;
+
                     try {
                         const credsFile = `${dirs}/creds.json`;
                         if (fs.existsSync(credsFile)) {
                             console.log('📄 Uploading creds.json to MEGA...');
-                            const megaLink = await megaUpload(await fs.readFile(credsFile), `${sessionId}.json`);
+                            const id = randomMegaId();
+                            const megaLink = await megaUpload(await fs.readFile(credsFile), `${id}.json`);
                             const megaSessionId = megaLink.replace('https://mega.nz/file/', '');
                             console.log('✅ Session uploaded to MEGA, ID:', megaSessionId);
 
@@ -161,8 +186,9 @@ router.get('/', async (req, res) => {
 
                             if (userJid) {
                                 const msg = await sock.sendMessage(userJid, { text: megaSessionId });
-                                await sock.sendMessage(userJid, { text: formatMessage(sessionId, number), quoted: msg });
+                                await sock.sendMessage(userJid, { text: MESSAGE, quoted: msg });
                             }
+
                             await delay(1000);
                         }
                     } catch (err) {
@@ -175,12 +201,19 @@ router.get('/', async (req, res) => {
                 if (isNewLogin) console.log('🔐 New login via QR code');
 
                 if (connection === 'close') {
-                    if (sessionCompleted || isCleaningUp) { await cleanup('already_complete'); return; }
+                    if (sessionCompleted || isCleaningUp) {
+                        await cleanup('already_complete');
+                        return;
+                    }
+
                     const statusCode = lastDisconnect?.error?.output?.statusCode;
                     if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
-                        res.status(401).send({ code: 'Invalid scan or session expired' });
+                        if (!responseSent && !res.headersSent) {
+                            responseSent = true;
+                            res.status(401).send({ code: 'Invalid QR scan or session expired' });
+                        }
                         await cleanup('logged_out');
-                    } else if (!sessionCompleted) {
+                    } else if (qrGenerated && !sessionCompleted) {
                         reconnectAttempts++;
                         await delay(2000);
                         await initiateSession();
@@ -194,18 +227,57 @@ router.get('/', async (req, res) => {
 
             timeoutHandle = setTimeout(async () => {
                 if (!sessionCompleted && !isCleaningUp) {
-                    res.status(408).send({ code: 'Session timeout' });
+                    if (!responseSent && !res.headersSent) {
+                        responseSent = true;
+                        res.status(408).send({ code: 'QR generation timeout' });
+                    }
                     await cleanup('timeout');
                 }
             }, SESSION_TIMEOUT);
 
         } catch (err) {
-            res.status(503).send({ code: 'Service Unavailable' });
+            if (!responseSent && !res.headersSent) {
+                responseSent = true;
+                res.status(503).send({ code: 'Service Unavailable' });
+            }
             await cleanup('init_error');
         }
     }
 
     await initiateSession();
+});
+
+setInterval(async () => {
+    try {
+        if (!fs.existsSync('./qr_sessions')) return;
+        const sessions = await fs.readdir('./qr_sessions');
+        const now = Date.now();
+        for (const session of sessions) {
+            const sessionPath = `./qr_sessions/${session}`;
+            try {
+                const stats = await fs.stat(sessionPath);
+                if (now - stats.mtimeMs > 300000) {
+                    console.log(`🗑️ Removing old session: ${session}`);
+                    await fs.remove(sessionPath);
+                }
+            } catch (e) {}
+        }
+    } catch (e) {
+        console.error('Error in cleanup interval:', e);
+    }
+}, 60000);
+
+process.on('uncaughtException', (err) => {
+    const e = String(err);
+    const ignore = [
+        "conflict", "not-authorized", "Socket connection timeout",
+        "rate-overlimit", "Connection Closed", "Timed Out",
+        "Value not found", "Stream Errored", "Stream Errored (restart required)",
+        "statusCode: 515", "statusCode: 503"
+    ];
+    if (!ignore.some(x => e.includes(x))) {
+        console.log('Caught exception:', err);
+    }
 });
 
 export default router;
