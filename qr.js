@@ -15,17 +15,17 @@ const SESSION_TIMEOUT = 60000;
 const MESSAGE = `
 *SESSION GENERATED SUCCESSFULLY* ✅
 
-*Gɪᴠᴇ ᴀ ꜱᴛᴀʀ ᴛᴏ ʀᴇᴘᴏ ꜰᴏʀ ᴄᴏᴜʀᴀɢᴇ* 🌟
-https://github.com/GlobalTechInfo/MEGA-MD
+*Gɪᴠᴇ ᴀ ⭐ ᴛᴏ ᴏᴜʀ ʀᴇᴘᴏ ꜰᴏʀ ᴄᴏᴜʀᴀɢᴇ* 🌟
+https://github.com/Neaterry6/X5-MD
 
-*Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ ꜰᴏʀ ϙᴜᴇʀʏ* 💭
-https://t.me/Global_TechInfo
-https://whatsapp.com/channel/0029VagJIAr3bbVBCpEkAM07
+*Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ ꜰᴏʀ ϙᴜᴇʀɪᴇꜱ* 💭
+https://t.me/Broken_vzn
+https://whatsapp.com/channel/0029VbCPTCQ0bIdfkkE4cg0L
 
-*Yᴏᴜ-ᴛᴜʙᴇ ᴛᴜᴛᴏʀɪᴀʟꜱ* 🪄 
-https://youtube.com/@GlobalTechInfo
+*Yᴏᴜᴛᴜʙᴇ ᴄʜᴀɴɴᴇʟ* 🪄 
+https://youtube.com/@brokenvzn-s7s
 
-*MEGA-MD--WHATSAPP* 🥀
+*X5-MD • WhatsApp Bot* 🥀
 `;
 
 async function removeFile(FilePath) {
@@ -86,13 +86,8 @@ router.get('/', async (req, res) => {
     }
 
     async function initiateSession() {
-        if (sessionCompleted || isCleaningUp) {
-            console.log('⚠️ Session already completed or cleaning up');
-            return;
-        }
-
+        if (sessionCompleted || isCleaningUp) return;
         if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-            console.log('❌ Max reconnection attempts reached');
             if (!responseSent && !res.headersSent) {
                 responseSent = true;
                 res.status(503).send({ code: 'Connection failed after multiple attempts' });
@@ -108,10 +103,7 @@ router.get('/', async (req, res) => {
             const { version } = await fetchLatestBaileysVersion();
 
             if (currentSocket) {
-                try {
-                    currentSocket.ev.removeAllListeners();
-                    await currentSocket.end();
-                } catch (e) {}
+                try { currentSocket.ev.removeAllListeners(); await currentSocket.end(); } catch (e) {}
             }
 
             currentSocket = makeWASocket({
@@ -169,12 +161,9 @@ router.get('/', async (req, res) => {
 
                 const { connection, lastDisconnect, qr, isNewLogin } = update;
 
-                if (qr && !qrGenerated && !sessionCompleted) {
-                    await handleQRCode(qr);
-                }
+                if (qr && !qrGenerated && !sessionCompleted) await handleQRCode(qr);
 
-                if (connection === 'open') {
-                    if (sessionCompleted) return;
+                if (connection === 'open' && !sessionCompleted) {
                     sessionCompleted = true;
 
                     try {
@@ -208,7 +197,6 @@ router.get('/', async (req, res) => {
 
                 if (connection === 'close') {
                     if (sessionCompleted || isCleaningUp) {
-                        console.log('✅ Session completed, not reconnecting');
                         await cleanup('already_complete');
                         return;
                     }
@@ -216,10 +204,7 @@ router.get('/', async (req, res) => {
                     const statusCode = lastDisconnect?.error?.output?.statusCode;
                     const reason = lastDisconnect?.error?.output?.payload?.error;
 
-                    console.log(`❌ Connection closed - Status: ${statusCode}, Reason: ${reason}`);
-
                     if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
-                        console.log('❌ Logged out or invalid session');
                         if (!responseSent && !res.headersSent) {
                             responseSent = true;
                             res.status(401).send({ code: 'Invalid QR scan or session expired' });
@@ -227,7 +212,6 @@ router.get('/', async (req, res) => {
                         await cleanup('logged_out');
                     } else if (qrGenerated && !sessionCompleted) {
                         reconnectAttempts++;
-                        console.log(`🔁 Reconnection attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}`);
                         await delay(2000);
                         await initiateSession();
                     } else {
@@ -240,7 +224,6 @@ router.get('/', async (req, res) => {
 
             timeoutHandle = setTimeout(async () => {
                 if (!sessionCompleted && !isCleaningUp) {
-                    console.log('⏰ QR generation timeout');
                     if (!responseSent && !res.headersSent) {
                         responseSent = true;
                         res.status(408).send({ code: 'QR generation timeout' });
@@ -250,7 +233,6 @@ router.get('/', async (req, res) => {
             }, SESSION_TIMEOUT);
 
         } catch (err) {
-            console.error('❌ Error initializing session:', err);
             if (!responseSent && !res.headersSent) {
                 responseSent = true;
                 res.status(503).send({ code: 'Service Unavailable' });
