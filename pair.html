@@ -30,6 +30,7 @@ body{
   padding:40px 30px;
   text-align:center;
   box-shadow:0 30px 70px rgba(0,0,0,0.08);
+  position:relative;
 }
 
 /* LOGO */
@@ -98,7 +99,10 @@ button:hover{
   border-radius:12px;
   background:#f3f4f6;
   font-weight:600;
-  display:none;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:10px;
 }
 
 /* SOCIALS */
@@ -163,7 +167,7 @@ button:hover{
 <div class="wrapper">
   <div class="card">
 
-    <img src="https://o.uguu.se/eTvkJDeN.jpg" class="logo">
+    <img src="https://o.uguu.se/eTvkJDeN.jpg" class="logo" alt="X5-MD Logo">
 
     <h1>X5-MD Pair Code</h1>
     <div class="subtitle">Enter your WhatsApp number to generate pairing code</div>
@@ -175,12 +179,15 @@ button:hover{
     <button onclick="generatePair()">Generate Pair Code</button>
 
     <!-- RESULT -->
-    <div class="result" id="resultBox"></div>
+    <div class="result" id="resultBox" style="display:none;">
+      <span id="pairCode"></span>
+      <button id="copyBtn" style="display:none;">Copy</button>
+    </div>
 
     <!-- SOCIALS -->
     <div class="socials">
       <a href="https://github.com/Neaterry6" target="_blank">🐙 GitHub</a>
-      <a href="https://t.me/Broken_vzn" target="_blank">📨 Telegram</a>
+      <a href="https://t.me/BrokenVzn" target="_blank">📨 Telegram</a>
       <a href="https://whatsapp.com/channel/0029VbCPTCQ0bIdfkkE4cg0L" target="_blank">📢 WA Channel</a>
       <a href="https://chat.whatsapp.com/FEcIqQ8blnR7sr1oZ3Nqh6?mode=gi_t" target="_blank">👥 WA Group</a>
       <a href="https://youtube.com/@brokenvzn-s7s?si=i7Z0reIsrrgXM08v" target="_blank" style="grid-column:span 2;background:#ffe5e5;">▶ YouTube</a>
@@ -194,43 +201,58 @@ button:hover{
 
 <!-- LOADER -->
 <div class="loader" id="loader">
-  <img src="https://o.uguu.se/eTvkJDeN.jpg">
+  <img src="https://i.ibb.co/4f0gL4H/loader.gif" alt="Loading...">
   <div>Generating your pairing code...</div>
 </div>
 
-<!-- SCRIPTS (unchanged logic, your original JS) -->
+<!-- SCRIPTS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
 <script>
 async function generatePair() {
   const input = document.getElementById('number');
   const resultBox = document.getElementById('resultBox');
+  const pairCodeSpan = document.getElementById('pairCode');
+  const copyBtn = document.getElementById('copyBtn');
   const loader = document.getElementById('loader');
   const number = input.value.replace(/\D/g,'');
 
   if (!number) {
-    resultBox.style.display = 'block';
-    resultBox.style.color = 'red';
-    resultBox.innerText = 'Please enter a valid phone number!';
+    resultBox.style.display = 'flex';
+    pairCodeSpan.innerText = 'Please enter a valid phone number!';
+    pairCodeSpan.style.color = 'red';
+    copyBtn.style.display = 'none';
     return;
   }
 
   loader.style.display = 'flex';
   resultBox.style.display = 'none';
+  copyBtn.style.display = 'none';
 
   try {
     const res = await axios(`/code?number=${number}`);
     const code = res.data.code || 'Service Unavailable';
-    resultBox.innerText = `Your Pair Code: ${code}`;
-    resultBox.style.color = '#000';
-    resultBox.style.display = 'block';
+    pairCodeSpan.innerText = `Your Pair Code: ${code}`;
+    pairCodeSpan.style.color = '#000';
+    resultBox.style.display = 'flex';
+    copyBtn.style.display = 'inline-block';
   } catch (err) {
-    resultBox.style.display = 'block';
-    resultBox.style.color = 'red';
-    resultBox.innerText = 'Failed to generate pair code!';
+    pairCodeSpan.innerText = 'Failed to generate pair code!';
+    pairCodeSpan.style.color = 'red';
+    resultBox.style.display = 'flex';
+    copyBtn.style.display = 'none';
   } finally {
     loader.style.display = 'none';
   }
 }
+
+// COPY BUTTON LOGIC
+document.getElementById('copyBtn').addEventListener('click', () => {
+  const code = document.getElementById('pairCode').innerText.replace('Your Pair Code: ','');
+  navigator.clipboard.writeText(code)
+    .then(() => alert('Copied to clipboard!'))
+    .catch(() => alert('Failed to copy!'));
+});
 </script>
+
 </body>
 </html>
