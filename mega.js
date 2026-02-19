@@ -1,10 +1,9 @@
 import { Storage } from 'megajs';
 
 const auth = {
-    email: 'Your mega email',
-    password: 'your mega password',
+  email: 'osayamonharrypotter@gmail.com',
+    password: 'Osayamon@1',
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'
-};
 
 export const upload = async (data, name) => {
     if (typeof data === 'string') data = Buffer.from(data);
