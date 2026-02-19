@@ -7,7 +7,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-
 body{
   font-family:'Inter',sans-serif;
   min-height:100vh;
@@ -23,14 +22,12 @@ body{
   max-width:440px;
   padding:20px;
 }
-
 .card{
   background:#fff;
   border-radius:24px;
   padding:40px 30px;
   text-align:center;
   box-shadow:0 30px 70px rgba(0,0,0,0.08);
-  position:relative;
 }
 
 /* LOGO */
@@ -49,7 +46,6 @@ h1{
   font-weight:700;
   margin-bottom:6px;
 }
-
 .subtitle{
   font-size:14px;
   color:#6b7280;
@@ -67,7 +63,6 @@ input{
   outline:none;
   transition:.2s;
 }
-
 input:focus{
   border-color:#0072ff;
   box-shadow:0 0 0 3px rgba(0,114,255,.15);
@@ -86,10 +81,25 @@ button{
   color:white;
   transition:.25s;
 }
-
 button:hover{
   transform:translateY(-2px);
   box-shadow:0 10px 25px rgba(0,114,255,0.35);
+}
+
+/* COPY BUTTON */
+.copy-btn{
+  margin-top:10px;
+  padding:10px 12px;
+  font-size:14px;
+  border:none;
+  border-radius:12px;
+  background:#0072ff;
+  color:#fff;
+  cursor:pointer;
+  transition:.2s;
+}
+.copy-btn:hover{
+  background:#005fcc;
 }
 
 /* RESULT */
@@ -99,10 +109,8 @@ button:hover{
   border-radius:12px;
   background:#f3f4f6;
   font-weight:600;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  gap:10px;
+  display:none;
+  word-break: break-all;
 }
 
 /* SOCIALS */
@@ -112,7 +120,6 @@ button:hover{
   grid-template-columns:1fr 1fr;
   gap:10px;
 }
-
 .socials a{
   text-decoration:none;
   font-size:13px;
@@ -124,10 +131,7 @@ button:hover{
   transition:.2s;
   text-align:center;
 }
-
-.socials a:hover{
-  background:#e5e7eb;
-}
+.socials a:hover{ background:#e5e7eb; }
 
 .footer{
   margin-top:25px;
@@ -147,14 +151,12 @@ button:hover{
   z-index:999;
   display:none;
 }
-
 .loader img{
   width:120px;
   border-radius:20px;
   margin-bottom:20px;
   animation:pulse 1.5s infinite;
 }
-
 @keyframes pulse{
   0%{transform:scale(1);opacity:1}
   50%{transform:scale(1.05);opacity:.7}
@@ -166,8 +168,7 @@ button:hover{
 
 <div class="wrapper">
   <div class="card">
-
-    <img src="https://o.uguu.se/eTvkJDeN.jpg" class="logo" alt="X5-MD Logo">
+    <img src="https://linksharing.samsungcloud.com/fzNXbdWhVZXy" class="logo">
 
     <h1>X5-MD Pair Code</h1>
     <div class="subtitle">Enter your WhatsApp number to generate pairing code</div>
@@ -179,15 +180,13 @@ button:hover{
     <button onclick="generatePair()">Generate Pair Code</button>
 
     <!-- RESULT -->
-    <div class="result" id="resultBox" style="display:none;">
-      <span id="pairCode"></span>
-      <button id="copyBtn" style="display:none;">Copy</button>
-    </div>
+    <div class="result" id="resultBox"></div>
+    <button class="copy-btn" id="copyBtn" style="display:none;" onclick="copyCode()">Copy Code</button>
 
     <!-- SOCIALS -->
     <div class="socials">
       <a href="https://github.com/Neaterry6" target="_blank">🐙 GitHub</a>
-      <a href="https://t.me/BrokenVzn" target="_blank">📨 Telegram</a>
+      <a href="https://t.me/Broken_vzn" target="_blank">📨 Telegram</a>
       <a href="https://whatsapp.com/channel/0029VbCPTCQ0bIdfkkE4cg0L" target="_blank">📢 WA Channel</a>
       <a href="https://chat.whatsapp.com/FEcIqQ8blnR7sr1oZ3Nqh6?mode=gi_t" target="_blank">👥 WA Group</a>
       <a href="https://youtube.com/@brokenvzn-s7s?si=i7Z0reIsrrgXM08v" target="_blank" style="grid-column:span 2;background:#ffe5e5;">▶ YouTube</a>
@@ -201,25 +200,25 @@ button:hover{
 
 <!-- LOADER -->
 <div class="loader" id="loader">
-  <img src="https://i.ibb.co/4f0gL4H/loader.gif" alt="Loading...">
+  <img src="https://linksharing.samsungcloud.com/fzNXbdWhVZXy">
   <div>Generating your pairing code...</div>
 </div>
 
 <!-- SCRIPTS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
 <script>
+const resultBox = document.getElementById('resultBox');
+const copyBtn = document.getElementById('copyBtn');
+const loader = document.getElementById('loader');
+
 async function generatePair() {
   const input = document.getElementById('number');
-  const resultBox = document.getElementById('resultBox');
-  const pairCodeSpan = document.getElementById('pairCode');
-  const copyBtn = document.getElementById('copyBtn');
-  const loader = document.getElementById('loader');
   const number = input.value.replace(/\D/g,'');
 
   if (!number) {
-    resultBox.style.display = 'flex';
-    pairCodeSpan.innerText = 'Please enter a valid phone number!';
-    pairCodeSpan.style.color = 'red';
+    resultBox.style.display = 'block';
+    resultBox.style.color = 'red';
+    resultBox.innerText = 'Please enter a valid phone number!';
     copyBtn.style.display = 'none';
     return;
   }
@@ -231,27 +230,27 @@ async function generatePair() {
   try {
     const res = await axios(`/code?number=${number}`);
     const code = res.data.code || 'Service Unavailable';
-    pairCodeSpan.innerText = `Your Pair Code: ${code}`;
-    pairCodeSpan.style.color = '#000';
-    resultBox.style.display = 'flex';
+    resultBox.innerText = `Your Pair Code: ${code}`;
+    resultBox.style.color = '#000';
+    resultBox.style.display = 'block';
     copyBtn.style.display = 'inline-block';
   } catch (err) {
-    pairCodeSpan.innerText = 'Failed to generate pair code!';
-    pairCodeSpan.style.color = 'red';
-    resultBox.style.display = 'flex';
+    resultBox.style.display = 'block';
+    resultBox.style.color = 'red';
+    resultBox.innerText = 'Failed to generate pair code!';
     copyBtn.style.display = 'none';
   } finally {
     loader.style.display = 'none';
   }
 }
 
-// COPY BUTTON LOGIC
-document.getElementById('copyBtn').addEventListener('click', () => {
-  const code = document.getElementById('pairCode').innerText.replace('Your Pair Code: ','');
-  navigator.clipboard.writeText(code)
-    .then(() => alert('Copied to clipboard!'))
-    .catch(() => alert('Failed to copy!'));
-});
+function copyCode() {
+  const text = resultBox.innerText.replace('Your Pair Code: ','');
+  navigator.clipboard.writeText(text).then(() => {
+    copyBtn.innerText = 'Copied!';
+    setTimeout(()=>{copyBtn.innerText='Copy Code';},2000);
+  });
+}
 </script>
 
 </body>
