@@ -6,6 +6,8 @@ import { fileURLToPath } from 'url';
 import qrRouter from './qr.js';
 import pairRouter from './pair.js';
 
+import fs from 'fs';
+
 const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -21,33 +23,50 @@ import('events').then(events => {
 // Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(__dirname));
 
-// Routes
+// --- API routes ---
 app.use('/qr', qrRouter);      // QR generation API
 app.use('/code', pairRouter);   // Pair code API
 
-// Serve pages
-app.use('/pair', async (req, res) => {
-    res.sendFile(path.join(__dirname, 'pair.html')); // Pair code page (X5-MD design)
+// --- HTML pages ---
+app.get('/pair', (req, res) => {
+    const filePath = path.join(__dirname, 'pair.html');
+    if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+    } else {
+        res.status(404).send('pair.html not found');
+    }
 });
 
-app.use('/qrpage', (req, res) => {
-    res.sendFile(path.join(__dirname, 'qr.html'));   // QR page (X5-MD design)
+app.get('/qrpage', (req, res) => {
+    const filePath = path.join(__dirname, 'qr.html');
+    if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+    } else {
+        res.status(404).send('qr.html not found');
+    }
 });
 
-app.use('/', async (req, res) => {
-    res.sendFile(path.join(__dirname, 'main.html')); // Home page
+app.get('/', (req, res) => {
+    const filePath = path.join(__dirname, 'main.html');
+    if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+    } else {
+        res.status(404).send('main.html not found');
+    }
 });
 
-// Start server
+// --- Test route to confirm server is up ---
+app.get('/test', (req, res) => res.send('Server is running!'));
+
+// --- Start server ---
 app.listen(PORT, () => {
     console.log(`YouTube: @brokenvzn-s7s`);
     console.log(`GitHub: @Neaterry6`);
     console.log(`Server running on http://localhost:${PORT}`);
 });
 
-// Global error catcher
+// --- Global error catcher ---
 process.on('uncaughtException', (err) => {
     const e = String(err);
     const ignore = [
@@ -57,7 +76,7 @@ process.on('uncaughtException', (err) => {
         "statusCode: 515", "statusCode: 503"
     ];
     if (!ignore.some(x => e.includes(x))) {
-        console.log('Caught exception:', err);
+        console.error('Caught exception:', err);
     }
 });
 
