@@ -26,7 +26,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // --- API routes ---
 app.use('/qr', qrRouter);      // QR generation API
-app.use('/code', pairRouter);   // Pair code API
+app.use('/code', pairRouter);  // Pair code API
 
 // --- HTML pages ---
 app.get('/pair', (req, res) => {
@@ -56,14 +56,17 @@ app.get('/', (req, res) => {
     }
 });
 
-// --- Test route to confirm server is up ---
-app.get('/test', (req, res) => res.send('Server is running!'));
+// --- Test route ---
+app.get('/test', (req, res) => res.send('ILOM BOT Server is running!'));
 
 // --- Start server ---
 app.listen(PORT, () => {
-    console.log(`YouTube: @brokenvzn-s7s`);
-    console.log(`GitHub: @Neaterry6`);
+    console.log('=================================');
+    console.log('ILOM BOT SESSION GENERATOR');
+    console.log('GitHub: https://github.com/NexusCoders-cyber/Amazing-Bot-');
+    console.log('Channel: https://whatsapp.com/channel/0029Vb7MzHT1SWt0T3G06p0M');
     console.log(`Server running on http://localhost:${PORT}`);
+    console.log('=================================');
 });
 
 // --- Global error catcher ---
