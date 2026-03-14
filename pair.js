@@ -17,17 +17,13 @@ const CLEANUP_DELAY = 5000;
 const MESSAGE = `
 *SESSION GENERATED SUCCESSFULLY* ✅
 
-*Gɪᴠᴇ ᴀ ⭐ ᴛᴏ ʀᴇᴘᴏ ꜰᴏʀ ᴄᴏᴜʀᴀɢᴇ* 🌟
-https://github.com/X5-MD/X5-MD
+*Give a ⭐ to the repo* 🌟
+https://github.com/NexusCoders-cyber/Amazing-Bot-
 
-*Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ ꜰᴏʀ ϙᴜᴇʀʏ* 💭
-https://t.me/Broken_vzn
-https://whatsapp.com/channel/0029VbCPTCQ0bIdfkkE4cg0L
+*Support Channel* 💭
+https://whatsapp.com/channel/0029Vb7MzHT1SWt0T3G06p0M
 
-*Yᴏᴜ-ᴛᴜʙᴇ ᴛᴜᴛᴏʀɪᴀʟꜱ* 🪄 
-https://youtube.com/@BrokenVzn-s7s
-
-*X5-MD • WhatsApp Bot* 🥀
+*ILOM BOT • WhatsApp Bot* 🥀
 `;
 
 async function removeFile(FilePath) {
@@ -41,11 +37,13 @@ async function removeFile(FilePath) {
     }
 }
 
-function randomMegaId(len = 6, numLen = 4) {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+function randomSessionSuffix(len = 32) {
+    const chars = '0123456789abcdef';
     let out = '';
-    for (let i = 0; i < len; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
-    return `${out}${Math.floor(Math.random() * Math.pow(10, numLen))}`;
+    for (let i = 0; i < len; i++) {
+        out += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return out;
 }
 
 router.get('/', async (req, res) => {
@@ -57,8 +55,9 @@ router.get('/', async (req, res) => {
     if (!phone.isValid()) return res.status(400).send({ code: 'Invalid phone number.' });
     num = phone.getNumber('e164').replace('+', '');
 
-    const sessionId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
-    const dirs = `./auth_info_baileys/session_${sessionId}`;
+    const sessionSuffix = randomSessionSuffix(32);
+    const sessionId = `ilombot--${sessionSuffix}`;
+    const dirs = `./auth_info_baileys/${sessionId}`;
 
     let pairingCodeSent = false, sessionCompleted = false, isCleaningUp = false;
     let responseSent = false, reconnectAttempts = 0, currentSocket = null, timeoutHandle = null;
@@ -67,36 +66,47 @@ router.get('/', async (req, res) => {
         if (isCleaningUp) return;
         isCleaningUp = true;
         console.log(`🧹 Cleanup ${sessionId} (${num}) - ${reason}`);
-        if (timeoutHandle) { clearTimeout(timeoutHandle); timeoutHandle = null; }
+        if (timeoutHandle) clearTimeout(timeoutHandle);
         if (currentSocket) {
-            try { currentSocket.ev.removeAllListeners(); await currentSocket.end(); } catch (e) {}
+            try { currentSocket.ev.removeAllListeners(); await currentSocket.end(); } catch {}
             currentSocket = null;
         }
-        setTimeout(async () => { await removeFile(dirs); }, CLEANUP_DELAY);
+        setTimeout(() => removeFile(dirs), CLEANUP_DELAY);
     }
 
     async function initiateSession() {
         if (sessionCompleted || isCleaningUp) return;
         if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-            if (!responseSent && !res.headersSent) { responseSent = true; res.status(503).send({ code: 'Connection failed after multiple attempts' }); }
-            await cleanup('max_reconnects'); return;
+            if (!responseSent && !res.headersSent) {
+                responseSent = true;
+                res.status(503).send({ code: 'Connection failed after multiple attempts' });
+            }
+            await cleanup('max_reconnects');
+            return;
         }
+
         try {
             if (!fs.existsSync(dirs)) await fs.mkdir(dirs, { recursive: true });
             const { state, saveCreds } = await useMultiFileAuthState(dirs);
             const { version } = await fetchLatestBaileysVersion();
 
             if (currentSocket) {
-                try { currentSocket.ev.removeAllListeners(); await currentSocket.end(); } catch (e) {}
+                try { currentSocket.ev.removeAllListeners(); await currentSocket.end(); } catch {}
             }
 
             currentSocket = makeWASocket({
                 version,
                 auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })) },
-                printQRInTerminal: false, logger: pino({ level: "silent" }),
-                browser: Browsers.macOS('Chrome'), markOnlineOnConnect: false,
-                generateHighQualityLinkPreview: false, defaultQueryTimeoutMs: 60000,
-                connectTimeoutMs: 60000, keepAliveIntervalMs: 30000, retryRequestDelayMs: 250, maxRetries: 3,
+                printQRInTerminal: false,
+                logger: pino({ level: "silent" }),
+                browser: Browsers.macOS('Chrome'),
+                markOnlineOnConnect: false,
+                generateHighQualityLinkPreview: false,
+                defaultQueryTimeoutMs: 60000,
+                connectTimeoutMs: 60000,
+                keepAliveIntervalMs: 30000,
+                retryRequestDelayMs: 250,
+                maxRetries: 3,
             });
 
             const sock = currentSocket;
@@ -111,31 +121,41 @@ router.get('/', async (req, res) => {
                     try {
                         const credsFile = `${dirs}/creds.json`;
                         if (fs.existsSync(credsFile)) {
-                            // ✅ Use X5-MD in session naming
-                            const customName = `X5-MD/X5-MD_${randomMegaId(8, 8)}`;
+                            const customName = `ILOM BOT/ILOM BOT_${sessionSuffix}`;
                             const megaLink = await megaUpload(await fs.readFile(credsFile), `${customName}.json`);
-                            const megaSessionId = megaLink.replace('https://mega.nz/file/', '');
                             const userJid = jidNormalizedUser(num + '@s.whatsapp.net');
-                            const msg = await sock.sendMessage(userJid, { text: megaSessionId });
+                            const msg = await sock.sendMessage(userJid, { text: sessionId });
                             await sock.sendMessage(userJid, { text: MESSAGE, quoted: msg });
                             await delay(1000);
                         }
-                    } catch (err) { console.error('Error sending session:', err); }
-                    finally { await cleanup('session_complete'); }
+                    } catch (err) {
+                        console.error('Error sending session:', err);
+                    } finally {
+                        await cleanup('session_complete');
+                    }
                 }
 
                 if (isNewLogin) console.log(`🔐 New login via pair code for ${num}`);
 
                 if (connection === 'close') {
-                    if (sessionCompleted || isCleaningUp) { await cleanup('already_complete'); return; }
+                    if (sessionCompleted || isCleaningUp) {
+                        await cleanup('already_complete');
+                        return;
+                    }
                     const statusCode = lastDisconnect?.error?.output?.statusCode;
                     if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
-                        if (!responseSent && !res.headersSent) { responseSent = true; res.status(401).send({ code: 'Invalid pairing code or session expired' }); }
+                        if (!responseSent && !res.headersSent) {
+                            responseSent = true;
+                            res.status(401).send({ code: 'Invalid pairing code or session expired' });
+                        }
                         await cleanup('logged_out');
                     } else if (pairingCodeSent && !sessionCompleted) {
                         reconnectAttempts++;
-                        await delay(2000); await initiateSession();
-                    } else { await cleanup('connection_closed'); }
+                        await delay(2000);
+                        await initiateSession();
+                    } else {
+                        await cleanup('connection_closed');
+                    }
                 }
             });
 
@@ -145,10 +165,16 @@ router.get('/', async (req, res) => {
                     pairingCodeSent = true;
                     let code = await sock.requestPairingCode(num);
                     code = code?.match(/.{1,4}/g)?.join('-') || code;
-                    if (!responseSent && !res.headersSent) { responseSent = true; res.send({ code }); }
+                    if (!responseSent && !res.headersSent) {
+                        responseSent = true;
+                        res.send({ code });
+                    }
                 } catch (error) {
                     pairingCodeSent = false;
-                    if (!responseSent && !res.headersSent) { responseSent = true; res.status(503).send({ code: 'Failed to get pairing code' }); }
+                    if (!responseSent && !res.headersSent) {
+                        responseSent = true;
+                        res.status(503).send({ code: 'Failed to get pairing code' });
+                    }
                     await cleanup('pairing_code_error');
                 }
             }
@@ -157,14 +183,20 @@ router.get('/', async (req, res) => {
 
             timeoutHandle = setTimeout(async () => {
                 if (!sessionCompleted && !isCleaningUp) {
-                    if (!responseSent && !res.headersSent) { responseSent = true; res.status(408).send({ code: 'Pairing timeout' }); }
+                    if (!responseSent && !res.headersSent) {
+                        responseSent = true;
+                        res.status(408).send({ code: 'Pairing timeout' });
+                    }
                     await cleanup('timeout');
                 }
             }, SESSION_TIMEOUT);
 
         } catch (err) {
             console.error(`❌ Error initializing session for ${num}:`, err);
-            if (!responseSent && !res.headersSent) { responseSent = true; res.status(503).send({ code: 'Service Unavailable' }); }
+            if (!responseSent && !res.headersSent) {
+                responseSent = true;
+                res.status(503).send({ code: 'Service Unavailable' });
+            }
             await cleanup('init_error');
         }
     }
@@ -172,6 +204,7 @@ router.get('/', async (req, res) => {
     await initiateSession();
 });
 
+// Auto-cleanup old sessions
 setInterval(async () => {
     try {
         const baseDir = './auth_info_baileys';
@@ -179,16 +212,17 @@ setInterval(async () => {
         const sessions = await fs.readdir(baseDir);
         const now = Date.now();
         for (const session of sessions) {
-            try {
-                const stats = await fs.stat(`${baseDir}/${session}`);
-                if (now - stats.mtimeMs > 10 * 60 * 1000) await fs.remove(`${baseDir}/${session}`);
-            } catch (e) {}
+            const fullPath = `${baseDir}/${session}`;
+            const stats = await fs.stat(fullPath);
+            if (now - stats.mtimeMs > 10 * 60 * 1000) await fs.remove(fullPath);
         }
-    } catch (e) { console.error('Error in cleanup interval:', e); }
+    } catch (e) {
+        console.error('Error in cleanup interval:', e);
+    }
 }, 60000);
 
-process.on('SIGTERM', async () => { try { await fs.remove('./auth_info_baileys'); } catch (e) {} process.exit(0); });
-process.on('SIGINT', async () => { try { await fs.remove('./auth_info_baileys'); } catch (e) {} process.exit(0); });
+process.on('SIGTERM', async () => { try { await fs.remove('./auth_info_baileys'); } catch {} process.exit(0); });
+process.on('SIGINT', async () => { try { await fs.remove('./auth_info_baileys'); } catch {} process.exit(0); });
 process.on('uncaughtException', (err) => {
     const e = String(err);
     const ignore = ["conflict","not-authorized","Socket connection timeout","rate-overlimit","Connection Closed","Timed Out","Value not found","Stream Errored","Stream Errored (restart required)","statusCode: 515","statusCode: 503"];
