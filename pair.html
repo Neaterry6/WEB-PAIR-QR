@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>X5-MD • Pair Code</title>
+<title>ILOM BOT • Pair Code</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -168,50 +168,50 @@ button:hover{
 
 <div class="wrapper">
   <div class="card">
-    <img src="https://linksharing.samsungcloud.com/fzNXbdWhVZXy" class="logo">
+    <img src="https://cdn.waifu.im/7240.jpg" class="logo">
 
-    <h1>X5-MD Pair Code</h1>
+    <h1>ILOM BOT Pair Code</h1>
     <div class="subtitle">Enter your WhatsApp number to generate pairing code</div>
 
-    <!-- INPUT -->
     <input type="text" id="number" placeholder="234XXXXXXXXXX">
 
-    <!-- BUTTON -->
     <button onclick="generatePair()">Generate Pair Code</button>
 
-    <!-- RESULT -->
     <div class="result" id="resultBox"></div>
     <button class="copy-btn" id="copyBtn" style="display:none;" onclick="copyCode()">Copy Code</button>
 
-    <!-- SOCIALS -->
     <div class="socials">
-      <a href="https://github.com/Neaterry6" target="_blank">🐙 GitHub</a>
-      <a href="https://t.me/Broken_vzn" target="_blank">📨 Telegram</a>
-      <a href="https://whatsapp.com/channel/0029VbCPTCQ0bIdfkkE4cg0L" target="_blank">📢 WA Channel</a>
-      <a href="https://chat.whatsapp.com/FEcIqQ8blnR7sr1oZ3Nqh6?mode=gi_t" target="_blank">👥 WA Group</a>
-      <a href="https://youtube.com/@brokenvzn-s7s?si=i7Z0reIsrrgXM08v" target="_blank" style="grid-column:span 2;background:#ffe5e5;">▶ YouTube</a>
+      <a href="https://github.com/NexusCoders-cyber/Amazing-Bot-" target="_blank">🐙 GitHub</a>
+      <a href="https://whatsapp.com/channel/0029Vb7MzHT1SWt0T3G06p0M" target="_blank">📢 WA Channel</a>
     </div>
 
     <div class="footer">
-      © 2026 X5-MD • Broken Vzn
+      © 2026 ILOM BOT • Ayanfe
     </div>
   </div>
 </div>
 
-<!-- LOADER -->
 <div class="loader" id="loader">
-  <img src="https://linksharing.samsungcloud.com/fzNXbdWhVZXy">
+  <img src="https://cdn.waifu.im/7240.jpg">
   <div>Generating your pairing code...</div>
 </div>
 
-<!-- SCRIPTS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
+
 <script>
 const resultBox = document.getElementById('resultBox');
 const copyBtn = document.getElementById('copyBtn');
 const loader = document.getElementById('loader');
 
+function generateSessionId(){
+  const hex=[...Array(32)]
+  .map(()=>Math.floor(Math.random()*16).toString(16))
+  .join('');
+  return `ilombot--${hex}`;
+}
+
 async function generatePair() {
+
   const input = document.getElementById('number');
   const number = input.value.replace(/\D/g,'');
 
@@ -228,28 +228,48 @@ async function generatePair() {
   copyBtn.style.display = 'none';
 
   try {
+
     const res = await axios(`/code?number=${number}`);
     const code = res.data.code || 'Service Unavailable';
-    resultBox.innerText = `Your Pair Code: ${code}`;
+
+    const sessionId = generateSessionId();
+
+    resultBox.innerText =
+`Your Pair Code: ${code}
+
+Session ID: ${sessionId}`;
+
     resultBox.style.color = '#000';
     resultBox.style.display = 'block';
     copyBtn.style.display = 'inline-block';
+
   } catch (err) {
+
     resultBox.style.display = 'block';
     resultBox.style.color = 'red';
     resultBox.innerText = 'Failed to generate pair code!';
     copyBtn.style.display = 'none';
+
   } finally {
+
     loader.style.display = 'none';
+
   }
 }
 
 function copyCode() {
-  const text = resultBox.innerText.replace('Your Pair Code: ','');
+
+  const text = resultBox.innerText;
   navigator.clipboard.writeText(text).then(() => {
+
     copyBtn.innerText = 'Copied!';
-    setTimeout(()=>{copyBtn.innerText='Copy Code';},2000);
+
+    setTimeout(()=>{
+      copyBtn.innerText='Copy Code';
+    },2000);
+
   });
+
 }
 </script>
 
