@@ -52,13 +52,17 @@ router.get('/', async (req, res) => {
 
         console.log(`🧹 Cleanup ${sessionId} (${num}) - ${reason}`);
 
-        if (timeoutHandle) clearTimeout(timeoutHandle);
+        if (timeoutHandle) {
+            clearTimeout(timeoutHandle);
+            timeoutHandle = null;
+        }
 
         if (currentSocket) {
             try {
                 currentSocket.ev.removeAllListeners();
                 await currentSocket.end();
             } catch {}
+            currentSocket = null;
         }
 
         setTimeout(async () => {
@@ -84,67 +88,103 @@ router.get('/', async (req, res) => {
             const { state, saveCreds } = await useMultiFileAuthState(dirs);
             const { version } = await fetchLatestBaileysVersion();
 
+            // Close previous socket cleanly before making a new one
+            if (currentSocket) {
+                try {
+                    currentSocket.ev.removeAllListeners();
+                    await currentSocket.end();
+                } catch {}
+                currentSocket = null;
+            }
+
             currentSocket = makeWASocket({
                 version,
                 auth: {
                     creds: state.creds,
-                    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }))
+                    keys: makeCacheableSignalKeyStore(
+                        state.keys,
+                        pino({ level: "fatal" }).child({ level: "fatal" })
+                    )
                 },
+                printQRInTerminal: false,
                 logger: pino({ level: "silent" }),
                 browser: Browsers.macOS('Chrome'),
-                connectTimeoutMs: 60000
+                markOnlineOnConnect: false,
+                generateHighQualityLinkPreview: false,
+                defaultQueryTimeoutMs: 60000,
+                connectTimeoutMs: 60000,
+                keepAliveIntervalMs: 30000,
+                retryRequestDelayMs: 250,
+                maxRetries: 3,
             });
 
             const sock = currentSocket;
 
             sock.ev.on('connection.update', async (update) => {
-                if (isCleaningUp) return;
-
+                // ✅ Do NOT return early on isCleaningUp here if connection just opened —
+                // we need to send the message first, then cleanup
                 const { connection, lastDisconnect } = update;
 
                 if (connection === 'open') {
+                    // Guard: only run once
                     if (sessionCompleted) return;
                     sessionCompleted = true;
+
+                    console.log(`✅ Connected for ${num} — uploading & sending session`);
 
                     try {
                         const credsFile = `${dirs}/creds.json`;
 
-                        if (fs.existsSync(credsFile)) {
-                            const megaLink = await megaUpload(
-                                await fs.readFile(credsFile),
-                                `${sessionId}.json`
-                            );
-
-                            const megaFileId = megaLink.replace('https://mega.nz/file/', '');
-                            const botSessionId = `ilombot--${megaFileId}`;
-
-                            const userJid = jidNormalizedUser(num + '@s.whatsapp.net');
-
-                            // 🔥 CLEAN MINIMAL MESSAGE WITH IMAGE
-                            const caption = `
-✅ *ILom Bot Connected*
-
-🔑 ${botSessionId}
-
-📢 Channel:
-https://whatsapp.com/channel/0029VagJIAr3bbVBCpEkAM07
-
-💻 GitHub:
-https://github.com/GlobalTechInfo/WEB-PAIR-QR
-`;
-
-                            await sock.sendMessage(userJid, {
-                                image: { url: "https://files.catbox.moe/ne3i3i.jpeg" },
-                                caption: caption.trim()
-                            });
-
-                            // ⏳ ensure delivery
-                            await delay(6000);
+                        if (!fs.existsSync(credsFile)) {
+                            console.error('creds.json not found after connection');
+                            return;
                         }
 
+                        // Upload creds.json to Mega
+                        const megaLink = await megaUpload(
+                            await fs.readFile(credsFile),
+                            `${sessionId}.json`
+                        );
+
+                        // ✅ Build bot-compatible session ID
+                        // Bot's index.js strips 'ilombot--' then fetches /download/<megaFileId>
+                        const megaFileId = megaLink.replace('https://mega.nz/file/', '');
+                        const botSessionId = `ilombot--${megaFileId}`;
+
+                        const userJid = jidNormalizedUser(num + '@s.whatsapp.net');
+
+                        console.log(`📤 Sending session to ${num}...`);
+
+                        // ✅ Send the session ID as plain text first so user can copy it easily
+                        const sessionMsg = await sock.sendMessage(userJid, {
+                            text: botSessionId
+                        });
+
+                        // ✅ Wait for first message to confirm delivery
+                        await delay(2000);
+
+                        // ✅ Send the full notification image with caption, quoted to session msg
+                        const caption = `✅ *ILom Bot Session Generated*\n\n` +
+                            `🔑 *Your Session ID is above — copy and paste it into your bot's SESSION_ID env variable.*\n\n` +
+                            `📢 *Channel:*\nhttps://whatsapp.com/channel/0029VagJIAr3bbVBCpEkAM07\n\n` +
+                            `💻 *GitHub:*\nhttps://github.com/GlobalTechInfo/WEB-PAIR-QR`;
+
+                        await sock.sendMessage(userJid, {
+                            image: { url: "https://files.catbox.moe/ne3i3i.jpeg" },
+                            caption: caption
+                        }, { quoted: sessionMsg });
+
+                        console.log(`✅ Session sent to ${num} successfully`);
+
+                        // ✅ CRITICAL: Wait long enough for WhatsApp to fully deliver both
+                        // messages over the socket before we close it. Without this the
+                        // socket closes mid-delivery and messages are lost.
+                        await delay(7000);
+
                     } catch (err) {
-                        console.error('Error sending session:', err);
+                        console.error('❌ Error sending session message:', err);
                     } finally {
+                        // Cleanup only runs after all delays above are done
                         await cleanup('session_complete');
                     }
                 }
@@ -152,35 +192,60 @@ https://github.com/GlobalTechInfo/WEB-PAIR-QR
                 if (connection === 'close') {
                     const statusCode = lastDisconnect?.error?.output?.statusCode;
 
-                    if (statusCode === DisconnectReason.loggedOut) {
+                    console.log(`🔌 Connection closed for ${num} — code: ${statusCode}`);
+
+                    // ✅ If session already completed or we're cleaning up, do not reconnect
+                    if (sessionCompleted || isCleaningUp) {
+                        await cleanup('already_complete');
+                        return;
+                    }
+
+                    // Fatal errors — do not retry
+                    if (
+                        statusCode === DisconnectReason.loggedOut ||
+                        statusCode === 401 ||
+                        statusCode === DisconnectReason.badSession
+                    ) {
                         if (!responseSent && !res.headersSent) {
                             responseSent = true;
-                            res.status(401).send({ code: 'Session expired' });
+                            res.status(401).send({ code: 'Session expired or invalid' });
                         }
                         await cleanup('logged_out');
-                    } else {
+                        return;
+                    }
+
+                    // ✅ Only retry if pairing code was sent and session isn't complete yet
+                    if (pairingCodeSent && !sessionCompleted) {
                         reconnectAttempts++;
+                        console.log(`🔄 Reconnecting (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
                         await delay(2000);
                         await initiateSession();
+                    } else {
+                        await cleanup('connection_closed');
                     }
                 }
             });
 
-            if (!sock.authState.creds.registered && !pairingCodeSent) {
+            // ✅ Request pairing code only if not yet registered and not already sent
+            if (!sock.authState.creds.registered && !pairingCodeSent && !isCleaningUp) {
                 await delay(1500);
 
                 try {
                     pairingCodeSent = true;
-
                     let code = await sock.requestPairingCode(num);
                     code = code?.match(/.{1,4}/g)?.join('-') || code;
+
+                    console.log(`🔑 Pairing code for ${num}: ${code}`);
 
                     if (!responseSent && !res.headersSent) {
                         responseSent = true;
                         res.send({ code });
                     }
 
-                } catch {
+                } catch (err) {
+                    console.error('❌ Failed to get pairing code:', err);
+                    pairingCodeSent = false;
+
                     if (!responseSent && !res.headersSent) {
                         responseSent = true;
                         res.status(503).send({ code: 'Failed to get pairing code' });
@@ -191,18 +256,24 @@ https://github.com/GlobalTechInfo/WEB-PAIR-QR
 
             sock.ev.on('creds.update', saveCreds);
 
+            // Session timeout watchdog
             timeoutHandle = setTimeout(async () => {
-                if (!sessionCompleted) {
+                if (!sessionCompleted && !isCleaningUp) {
+                    console.log(`⏰ Session timeout for ${num}`);
                     if (!responseSent && !res.headersSent) {
                         responseSent = true;
-                        res.status(408).send({ code: 'Timeout' });
+                        res.status(408).send({ code: 'Pairing timeout — please try again' });
                     }
                     await cleanup('timeout');
                 }
             }, SESSION_TIMEOUT);
 
         } catch (err) {
-            console.error(err);
+            console.error(`❌ Error initializing session for ${num}:`, err);
+            if (!responseSent && !res.headersSent) {
+                responseSent = true;
+                res.status(503).send({ code: 'Service Unavailable' });
+            }
             await cleanup('init_error');
         }
     }
