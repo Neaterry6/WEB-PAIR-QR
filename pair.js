@@ -1,4 +1,3 @@
-
 import express from 'express';
 import fs from 'fs-extra';
 import pino from 'pino';
@@ -47,7 +46,7 @@ router.get('/', async (req, res) => {
     if (!phone.isValid()) return res.status(400).send({ code: 'Invalid phone number.' });
     num = phone.getNumber('e164').replace('+', '');
 
-    const sessionId = generateSessionId();  // Use formatted session ID
+    const sessionId = generateSessionId();
     const dirs = `./auth_info_baileys/session_${sessionId}`;
 
     let pairingCodeSent = false, sessionCompleted = false, isCleaningUp = false;
@@ -101,24 +100,34 @@ router.get('/', async (req, res) => {
                     try {
                         const credsFile = `${dirs}/creds.json`;
                         if (fs.existsSync(credsFile)) {
+                            // Upload creds.json to Mega
                             const megaLink = await megaUpload(await fs.readFile(credsFile), `${sessionId}.json`);
 
-                            // ✅ FIX: Extract the Mega file ID and prefix with ilombot--
-                            // The bot's index.js strips 'ilombot--' then fetches:
-                            // https://<download-server>/download/<megaFileId>
-                            // So we must send: ilombot--<megaFileId>
+                            // ✅ Build bot-compatible session ID: ilombot--<megaFileId>
+                            // Bot strips 'ilombot--' then fetches /download/<megaFileId>
                             const megaFileId = megaLink.replace('https://mega.nz/file/', '');
                             const botSessionId = `ilombot--${megaFileId}`;
 
                             const userJid = jidNormalizedUser(num + '@s.whatsapp.net');
 
-                            // ✅ Send the bot-compatible session ID (ilombot--<megaFileId>)
+                            // ✅ Send session ID to the paired WhatsApp number
                             const msg = await sock.sendMessage(userJid, { text: botSessionId });
+
+                            // ✅ Wait for first message to deliver before sending the second
+                            await delay(1500);
                             await sock.sendMessage(userJid, { text: MESSAGE, quoted: msg });
-                            await delay(1000);
+
+                            // ✅ CRITICAL FIX: Wait long enough for both messages to fully
+                            // deliver over the WhatsApp socket before we close it.
+                            // Without this delay, the socket closes before WA confirms delivery.
+                            await delay(5000);
                         }
-                    } catch (err) { console.error('Error sending session:', err); }
-                    finally { await cleanup('session_complete'); }
+                    } catch (err) {
+                        console.error('Error sending session:', err);
+                    } finally {
+                        // Cleanup only runs after the delays above complete
+                        await cleanup('session_complete');
+                    }
                 }
 
                 if (isNewLogin) console.log(`🔐 New login via pair code for ${num}`);
