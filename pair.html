@@ -3,141 +3,154 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ilom Bot Pair</title>
+<title>ILom Bot • Pair Code</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-:root{
-  --bg:#eef2f7;
-  --card:#ffffff;
-  --text:#111;
-  --muted:#666;
-  --primary:#3b82f6;
-}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-.dark{
-  --bg:#0f172a;
-  --card:#1e293b;
-  --text:#fff;
-  --muted:#94a3b8;
+:root{
+  --bg:#050508;
+  --surface:#111;
+  --border:rgba(255,255,255,0.08);
+  --text:#e8eaf0;
+  --muted:rgba(232,234,240,0.4);
+  --accent:#00ff88;
 }
 
 body{
-  margin:0;
-  font-family:'Poppins',sans-serif;
-  background:var(--bg) center/cover no-repeat;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-  transition:background 0.8s ease;
-}
-
-.container{
-  width:340px;
-  background:var(--card);
-  border-radius:25px;
-  padding:30px 20px;
-  text-align:center;
-  box-shadow:0 10px 30px rgba(0,0,0,0.15);
-  backdrop-filter:blur(8px);
-}
-
-.icon{
-  width:80px;
-  height:80px;
-  margin:auto;
-  border-radius:20px;
-  background:linear-gradient(135deg,#22c1c3,#3b82f6);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:white;
-  font-size:30px;
-}
-
-h2{
-  margin:15px 0 5px;
+  font-family:'Syne',sans-serif;
+  background:var(--bg);
   color:var(--text);
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:20px;
+  overflow:hidden;
 }
 
-p{
+body.light{
+  --bg:#f5f5f5;
+  --surface:#fff;
+  --text:#111;
+  --muted:rgba(0,0,0,0.5);
+}
+
+/* BG */
+.bg{
+  position:fixed;
+  inset:0;
+  background-size:cover;
+  background-position:center;
+  filter:blur(18px) brightness(.45);
+  z-index:-2;
+}
+
+/* PARTICLES */
+canvas{
+  position:fixed;
+  inset:0;
+  z-index:-1;
+}
+
+/* TOGGLE */
+.toggle{
+  position:fixed;
+  top:20px;
+  right:20px;
+}
+.switch{
+  width:50px;
+  height:26px;
+  background:#222;
+  border-radius:50px;
+  position:relative;
+  cursor:pointer;
+}
+.switch::before{
+  content:"";
+  position:absolute;
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  background:#00ff88;
+  top:2px;
+  left:2px;
+  transition:.3s;
+}
+body.light .switch{background:#ccc}
+body.light .switch::before{transform:translateX(24px)}
+
+.wrapper{
+  width:100%;
+  max-width:400px;
+  text-align:center;
+}
+
+/* HEADER */
+.brand{
+  font-size:2rem;
+  font-weight:800;
+}
+.brand span{color:var(--accent)}
+
+.sub{
+  font-size:12px;
   color:var(--muted);
-  font-size:14px;
 }
 
-.input{
+.inputBox{
   margin-top:20px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px;
   display:flex;
   align-items:center;
-  background:#f1f5f9;
-  border-radius:12px;
-  padding:10px;
+  gap:10px;
 }
 
-.dark .input{
-  background:#334155;
+.inputBox img{
+  width:24px;
 }
 
-.input span{
-  margin-right:5px;
-  color:var(--muted);
-}
-
-.input input{
+.inputBox input{
+  background:none;
   border:none;
   outline:none;
-  background:none;
-  width:100%;
-  font-size:16px;
   color:var(--text);
+  width:100%;
+  font-size:15px;
 }
 
+/* BUTTON */
 button{
-  margin-top:20px;
+  margin-top:15px;
   width:100%;
   padding:12px;
   border:none;
   border-radius:12px;
-  background:linear-gradient(135deg,#22c1c3,#3b82f6);
-  color:white;
+  background:var(--accent);
+  color:#000;
   font-weight:bold;
   cursor:pointer;
-  transition:0.3s;
-}
-button:hover{
-  opacity:0.9;
 }
 
+/* STATUS */
 .status{
-  margin-top:15px;
-  font-size:14px;
+  margin-top:10px;
+  font-size:13px;
 }
 
-.spinner{
-  border:3px solid #ccc;
-  border-top:3px solid var(--primary);
-  border-radius:50%;
-  width:18px;
-  height:18px;
-  animation:spin 1s linear infinite;
-  display:inline-block;
-}
-
-@keyframes spin{
-  to{transform:rotate(360deg);}
-}
-
+/* CODE */
 .codeBox{
-  margin-top:20px;
+  margin-top:15px;
   padding:15px;
-  background:#e0f2fe;
   border-radius:12px;
-}
-
-.dark .codeBox{
-  background:#1e3a8a;
+  background:var(--surface);
+  border:1px solid var(--border);
 }
 
 .copyBtn{
@@ -146,68 +159,68 @@ button:hover{
   width:100%;
   border:none;
   border-radius:10px;
+  background:#00ff88;
   cursor:pointer;
-  background:#10b981;
-  color:white;
 }
 
-.toggle{
-  position:absolute;
-  top:15px;
-  right:15px;
-  cursor:pointer;
-  font-size:26px;
-  transition:0.4s;
+/* FOOTER */
+.footer{
+  margin-top:20px;
+  font-size:11px;
+  color:var(--muted);
 }
 </style>
 </head>
 
 <body>
 
-<div class="toggle" onclick="toggleTheme()">🔄</div>
+<div class="bg" id="bg"></div>
+<canvas id="canvas"></canvas>
 
-<div class="container">
-  <div class="icon">🤖</div>
-  <h2>Ilom Bot Pair</h2>
-  <p>Enter your WhatsApp number</p>
+<div class="toggle" onclick="document.body.classList.toggle('light')">
+  <div class="switch"></div>
+</div>
 
-  <div class="input">
-    <span id="cc">+</span>
-    <input id="number" placeholder="234812..." />
-  </div>
+<div class="wrapper">
 
-  <button onclick="getCode()">Get Pairing Code</button>
+<div class="brand">ILom<span>Bot</span></div>
+<div class="sub">Enter your WhatsApp number</div>
 
-  <div class="status" id="status"></div>
-  <div id="code-area"></div>
+<div class="inputBox">
+  <img id="flag" src="https://flagcdn.com/w40/un.png">
+  <input id="number" placeholder="234812..." oninput="updateFlag()">
+</div>
+
+<button onclick="getCode()">Get Pairing Code</button>
+
+<div class="status" id="status"></div>
+<div id="code-area"></div>
+
+<div class="footer">
+NexusCoders • made with love
+</div>
+
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
 
 <script>
-let darkMode = false;
+// FLAG DETECT (BASED ON COUNTRY CODE)
+function updateFlag(){
+  const num = document.getElementById('number').value;
 
-// Theme Toggle
-function toggleTheme(){
-  document.body.classList.toggle('dark');
-  darkMode = !darkMode;
-  document.querySelector(".toggle").innerText = darkMode ? "☀️" : "🌙";
+  if(num.startsWith("234")){
+    document.getElementById('flag').src = "https://flagcdn.com/w40/ng.png";
+  }else if(num.startsWith("1")){
+    document.getElementById('flag').src = "https://flagcdn.com/w40/us.png";
+  }else if(num.startsWith("44")){
+    document.getElementById('flag').src = "https://flagcdn.com/w40/gb.png";
+  }else{
+    document.getElementById('flag').src = "https://flagcdn.com/w40/un.png";
+  }
 }
 
-// Auto Country Code
-fetch('https://ipapi.co/json/')
-.then(res=>res.json())
-.then(data=>{
-  document.getElementById('cc').innerText = '+' + data.country_calling_code.replace('+','');
-});
-
-// Copy Code
-function copyCode(val){
-  navigator.clipboard.writeText(val);
-  alert("Copied!");
-}
-
-// Main Pair Code
+// MAIN FUNCTION
 async function getCode(){
   const num = document.getElementById('number').value.replace(/[^0-9]/g,'');
   const status = document.getElementById('status');
@@ -218,7 +231,7 @@ async function getCode(){
     return;
   }
 
-  status.innerHTML = '<span class="spinner"></span> Generating...';
+  status.innerHTML = "⏳ Generating...";
   area.innerHTML = "";
 
   try{
@@ -229,31 +242,59 @@ async function getCode(){
 
     area.innerHTML = `
       <div class="codeBox">
-        <div style="font-size:20px;word-break:break-all;">${code}</div>
-        <button class="copyBtn" onclick="copyCode('${code}')">Copy</button>
+        <div style="font-size:18px;">${code}</div>
+        <button class="copyBtn" onclick="navigator.clipboard.writeText('${code}')">Copy</button>
       </div>
     `;
 
     navigator.clipboard.writeText(code);
 
   }catch{
-    status.innerHTML = "❌ Failed to generate";
+    status.innerHTML = "❌ Failed";
   }
 }
 
-// Waifu API Background Change
-async function setWaifuBG(){
+// WAIFU BG
+const bg = document.getElementById("bg");
+async function changeBg(){
   try{
     const res = await fetch("https://api.waifu.pics/sfw/waifu");
     const data = await res.json();
-    document.body.style.backgroundImage = `url(${data.url})`;
-  }catch(err){
-    console.error("BG Load Error:", err);
-  }
+    bg.style.backgroundImage = `url(${data.url})`;
+  }catch{}
 }
-setWaifuBG();
-setInterval(setWaifuBG, 5000);
+setInterval(changeBg,5000);
+changeBg();
 
+// PARTICLES
+const c = document.getElementById("canvas");
+const ctx = c.getContext("2d");
+let w,h,parts=[];
+
+function resize(){
+  w=c.width=innerWidth;
+  h=c.height=innerHeight;
+}
+resize();
+window.onresize=resize;
+
+for(let i=0;i<60;i++){
+  parts.push({x:Math.random()*w,y:Math.random()*h,vx:Math.random()-0.5,vy:Math.random()-0.5});
+}
+
+function draw(){
+  ctx.clearRect(0,0,w,h);
+  parts.forEach(p=>{
+    p.x+=p.vx;
+    p.y+=p.vy;
+    if(p.x<0||p.x>w)p.vx*=-1;
+    if(p.y<0||p.y>h)p.vy*=-1;
+    ctx.fillStyle="rgba(0,255,136,0.5)";
+    ctx.fillRect(p.x,p.y,2,2);
+  });
+  requestAnimationFrame(draw);
+}
+draw();
 </script>
 
 </body>
