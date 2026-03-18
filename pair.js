@@ -165,9 +165,9 @@ router.get('/', async (req, res) => {
 
                         // ✅ Send the full notification image with caption, quoted to session msg
                         const caption = `✅ *ILom Bot Session Generated*\n\n` +
-                            `🔑 *Your Session ID is above — copy and paste it into your bot's SESSION_ID env variable.*\n\n` +
-                            `📢 *Channel:*\nhttps://whatsapp.com/channel/0029VagJIAr3bbVBCpEkAM07\n\n` +
-                            `💻 *GitHub:*\nhttps://github.com/GlobalTechInfo/WEB-PAIR-QR`;
+                            `🔑 *Your Session ID is above — copy and paste it into your bot's SESSION_ID env variable,also follow our channel,visit repo and star repo.*\n\n` +
+                            `📢 *Channel:*\nhttps://whatsapp.com/channel/0029Vb7MzHT1SWt0T3G06p0M\n\n` +
+                            `💻 *GitHub:*\nhttps://github.com/NexusCoders-cyber/Amazing-Bot-`;
 
                         await sock.sendMessage(userJid, {
                             image: { url: "https://files.catbox.moe/ne3i3i.jpeg" },
