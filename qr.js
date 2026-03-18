@@ -12,20 +12,14 @@ const router = express.Router();
 const MAX_RECONNECT_ATTEMPTS = 3;
 const SESSION_TIMEOUT = 60000;
 
+// 🔥 Minimal, branded success message
 const MESSAGE = `
-*SESSION GENERATED SUCCESSFULLY* ✅
+✅ *ILom Bot Connected!*
 
-*Gɪᴠᴇ ᴀ ꜱᴛᴀʀ ᴛᴏ ʀᴇᴘᴏ ꜰᴏʀ ᴄᴏᴜʀᴀɢᴇ* 🌟
-https://github.com/GlobalTechInfo/MEGA-MD
+🔑 Your Session ID will allow you to pair with ILom Bot
 
-*Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ ꜰᴏʀ ϙᴜᴇʀʏ* 💭
-https://t.me/Global_TechInfo
-https://whatsapp.com/channel/0029VagJIAr3bbVBCpEkAM07
-
-*Yᴏᴜ-ᴛᴜʙᴇ ᴛᴜᴛᴏʀɪᴀʟꜱ* 🪄 
-https://youtube.com/@GlobalTechInfo
-
-*MEGA-MD--WHATSAPP* 🥀
+📢 Channel: https://whatsapp.com/channel/0029VagJIAr3bbVBCpEkAM07
+💻 GitHub: https://github.com/NexusCoders/ILom-Bot
 `;
 
 async function removeFile(FilePath) {
@@ -65,18 +59,13 @@ router.get('/', async (req, res) => {
 
         console.log(`🧹 Cleaning up session ${sessionId} - Reason: ${reason}`);
 
-        if (timeoutHandle) {
-            clearTimeout(timeoutHandle);
-            timeoutHandle = null;
-        }
+        if (timeoutHandle) clearTimeout(timeoutHandle);
 
         if (currentSocket) {
             try {
                 currentSocket.ev.removeAllListeners();
                 await currentSocket.end();
-            } catch (e) {
-                console.error('Error closing socket:', e);
-            }
+            } catch {}
             currentSocket = null;
         }
 
@@ -86,13 +75,9 @@ router.get('/', async (req, res) => {
     }
 
     async function initiateSession() {
-        if (sessionCompleted || isCleaningUp) {
-            console.log('⚠️ Session already completed or cleaning up');
-            return;
-        }
+        if (sessionCompleted || isCleaningUp) return;
 
         if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-            console.log('❌ Max reconnection attempts reached');
             if (!responseSent && !res.headersSent) {
                 responseSent = true;
                 res.status(503).send({ code: 'Connection failed after multiple attempts' });
@@ -111,7 +96,7 @@ router.get('/', async (req, res) => {
                 try {
                     currentSocket.ev.removeAllListeners();
                     await currentSocket.end();
-                } catch (e) {}
+                } catch {}
             }
 
             currentSocket = makeWASocket({
@@ -120,16 +105,12 @@ router.get('/', async (req, res) => {
                 browser: Browsers.macOS('Chrome'),
                 auth: {
                     creds: state.creds,
-                    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
+                    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }))
                 },
                 printQRInTerminal: false,
                 markOnlineOnConnect: false,
                 generateHighQualityLinkPreview: false,
-                defaultQueryTimeoutMs: 60000,
-                connectTimeoutMs: 60000,
-                keepAliveIntervalMs: 30000,
-                retryRequestDelayMs: 250,
-                maxRetries: 3,
+                defaultQueryTimeoutMs: 60000
             });
 
             const sock = currentSocket;
@@ -152,7 +133,6 @@ router.get('/', async (req, res) => {
                                 '4. Scan the QR code above'
                             ]
                         });
-                        console.log('📱 QR Code sent to client');
                     }
                 } catch (err) {
                     console.error('Error generating QR code:', err);
@@ -169,9 +149,7 @@ router.get('/', async (req, res) => {
 
                 const { connection, lastDisconnect, qr, isNewLogin } = update;
 
-                if (qr && !qrGenerated && !sessionCompleted) {
-                    await handleQRCode(qr);
-                }
+                if (qr && !qrGenerated && !sessionCompleted) await handleQRCode(qr);
 
                 if (connection === 'open') {
                     if (sessionCompleted) return;
@@ -180,22 +158,25 @@ router.get('/', async (req, res) => {
                     try {
                         const credsFile = `${dirs}/creds.json`;
                         if (fs.existsSync(credsFile)) {
-                            console.log('📄 Uploading creds.json to MEGA...');
-                            const id = randomMegaId();
-                            const megaLink = await megaUpload(await fs.readFile(credsFile), `${id}.json`);
+                            const megaLink = await megaUpload(await fs.readFile(credsFile), `${randomMegaId()}.json`);
                             const megaSessionId = megaLink.replace('https://mega.nz/file/', '');
-                            console.log('✅ Session uploaded to MEGA, ID:', megaSessionId);
+                            const botSessionId = `ilombot--${megaSessionId}`;
 
-                            const userJid = Object.keys(sock.authState.creds.me || {}).length > 0
-                                ? jidNormalizedUser(sock.authState.creds.me.id)
-                                : null;
+                            const userJid = jidNormalizedUser(sock.authState.creds.me.id);
 
-                            if (userJid) {
-                                const msg = await sock.sendMessage(userJid, { text: megaSessionId });
-                                await sock.sendMessage(userJid, { text: MESSAGE, quoted: msg });
-                            }
+                            await sock.sendMessage(userJid, {
+                                image: { url: "https://files.catbox.moe/ne3i3i.jpeg" },
+                                caption: `
+✅ *ILom Bot Connected!*
 
-                            await delay(1000);
+🔑 Session ID: ${botSessionId}
+
+📢 Channel: https://whatsapp.com/channel/0029VagJIAr3bbVBCpEkAM07
+💻 GitHub: https://github.com/NexusCoders/ILom-Bot
+`.trim()
+                            });
+
+                            await delay(5000);
                         }
                     } catch (err) {
                         console.error('Error sending session:', err);
@@ -207,19 +188,9 @@ router.get('/', async (req, res) => {
                 if (isNewLogin) console.log('🔐 New login via QR code');
 
                 if (connection === 'close') {
-                    if (sessionCompleted || isCleaningUp) {
-                        console.log('✅ Session completed, not reconnecting');
-                        await cleanup('already_complete');
-                        return;
-                    }
-
                     const statusCode = lastDisconnect?.error?.output?.statusCode;
-                    const reason = lastDisconnect?.error?.output?.payload?.error;
 
-                    console.log(`❌ Connection closed - Status: ${statusCode}, Reason: ${reason}`);
-
-                    if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
-                        console.log('❌ Logged out or invalid session');
+                    if (statusCode === DisconnectReason.loggedOut) {
                         if (!responseSent && !res.headersSent) {
                             responseSent = true;
                             res.status(401).send({ code: 'Invalid QR scan or session expired' });
@@ -227,7 +198,6 @@ router.get('/', async (req, res) => {
                         await cleanup('logged_out');
                     } else if (qrGenerated && !sessionCompleted) {
                         reconnectAttempts++;
-                        console.log(`🔁 Reconnection attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}`);
                         await delay(2000);
                         await initiateSession();
                     } else {
@@ -240,7 +210,6 @@ router.get('/', async (req, res) => {
 
             timeoutHandle = setTimeout(async () => {
                 if (!sessionCompleted && !isCleaningUp) {
-                    console.log('⏰ QR generation timeout');
                     if (!responseSent && !res.headersSent) {
                         responseSent = true;
                         res.status(408).send({ code: 'QR generation timeout' });
@@ -260,39 +229,6 @@ router.get('/', async (req, res) => {
     }
 
     await initiateSession();
-});
-
-setInterval(async () => {
-    try {
-        if (!fs.existsSync('./qr_sessions')) return;
-        const sessions = await fs.readdir('./qr_sessions');
-        const now = Date.now();
-        for (const session of sessions) {
-            const sessionPath = `./qr_sessions/${session}`;
-            try {
-                const stats = await fs.stat(sessionPath);
-                if (now - stats.mtimeMs > 300000) {
-                    console.log(`🗑️ Removing old session: ${session}`);
-                    await fs.remove(sessionPath);
-                }
-            } catch (e) {}
-        }
-    } catch (e) {
-        console.error('Error in cleanup interval:', e);
-    }
-}, 60000);
-
-process.on('uncaughtException', (err) => {
-    const e = String(err);
-    const ignore = [
-        "conflict", "not-authorized", "Socket connection timeout",
-        "rate-overlimit", "Connection Closed", "Timed Out",
-        "Value not found", "Stream Errored", "Stream Errored (restart required)",
-        "statusCode: 515", "statusCode: 503"
-    ];
-    if (!ignore.some(x => e.includes(x))) {
-        console.log('Caught exception:', err);
-    }
 });
 
 export default router;
