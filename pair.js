@@ -88,7 +88,6 @@ router.get('/', async (req, res) => {
             const { state, saveCreds } = await useMultiFileAuthState(dirs);
             const { version } = await fetchLatestBaileysVersion();
 
-            // Close previous socket cleanly before making a new one
             if (currentSocket) {
                 try {
                     currentSocket.ev.removeAllListeners();
@@ -121,12 +120,9 @@ router.get('/', async (req, res) => {
             const sock = currentSocket;
 
             sock.ev.on('connection.update', async (update) => {
-                // ✅ Do NOT return early on isCleaningUp here if connection just opened —
-                // we need to send the message first, then cleanup
                 const { connection, lastDisconnect } = update;
 
                 if (connection === 'open') {
-                    // Guard: only run once
                     if (sessionCompleted) return;
                     sessionCompleted = true;
 
@@ -140,34 +136,42 @@ router.get('/', async (req, res) => {
                             return;
                         }
 
-                        // Upload creds.json to Mega
+                        // Upload creds.json to Mega — returns full URL like:
+                        // https://mega.nz/file/FILEID#DECRYPTIONKEY
                         const megaLink = await megaUpload(
                             await fs.readFile(credsFile),
                             `${sessionId}.json`
                         );
 
-                        // ✅ Build bot-compatible session ID
-                        // Bot's index.js strips 'ilombot--' then fetches /download/<megaFileId>
-                        const megaFileId = megaLink.replace('https://mega.nz/file/', '');
-                        const botSessionId = `ilombot--${megaFileId}`;
+                        console.log(`📦 Mega link: ${megaLink}`);
+
+                        // ✅ FIX: Encode the FULL Mega URL (including #key) as base64
+                        // so the bot can reconstruct the complete URL for download.
+                        // We cannot just strip 'https://mega.nz/file/' because the
+                        // URL contains a '#DECRYPTIONKEY' fragment that is required
+                        // by megajs to decrypt the file — without it you get:
+                        // "Invalid URL: no hash"
+                        const encodedUrl = Buffer.from(megaLink).toString('base64');
+                        const botSessionId = `ilombot--${encodedUrl}`;
 
                         const userJid = jidNormalizedUser(num + '@s.whatsapp.net');
 
                         console.log(`📤 Sending session to ${num}...`);
 
-                        // ✅ Send the session ID as plain text first so user can copy it easily
+                        // Send the session ID as plain text so user can copy it
                         const sessionMsg = await sock.sendMessage(userJid, {
                             text: botSessionId
                         });
 
-                        // ✅ Wait for first message to confirm delivery
+                        // Wait for first message to confirm delivery
                         await delay(2000);
 
-                        // ✅ Send the full notification image with caption, quoted to session msg
-                        const caption = `✅ *ILom Bot Session Generated*\n\n` +
-                            `🔑 *Your Session ID is above — copy and paste it into your bot's SESSION_ID env variable,also follow our channel,visit repo and star repo.*\n\n` +
-                            `📢 *Channel:*\nhttps://whatsapp.com/channel/0029Vb7MzHT1SWt0T3G06p0M\n\n` +
-                            `💻 *GitHub:*\nhttps://github.com/NexusCoders-cyber/Amazing-Bot-`;
+                        // Send the full notification image with caption
+                        const caption =
+                            `✅ *ILom Bot Session Generated*\n\n` +
+                            `🔑 *Your Session ID is above — copy and paste it into your bot's SESSION_ID env variable.*\n\n` +
+                            `📢 *Channel:*\nhttps://whatsapp.com/channel/0029VagJIAr3bbVBCpEkAM07\n\n` +
+                            `💻 *GitHub:*\nhttps://github.com/GlobalTechInfo/WEB-PAIR-QR`;
 
                         await sock.sendMessage(userJid, {
                             image: { url: "https://files.catbox.moe/ne3i3i.jpeg" },
@@ -176,15 +180,13 @@ router.get('/', async (req, res) => {
 
                         console.log(`✅ Session sent to ${num} successfully`);
 
-                        // ✅ CRITICAL: Wait long enough for WhatsApp to fully deliver both
-                        // messages over the socket before we close it. Without this the
-                        // socket closes mid-delivery and messages are lost.
+                        // CRITICAL: wait for both messages to fully deliver before
+                        // the finally{} block closes the socket
                         await delay(7000);
 
                     } catch (err) {
                         console.error('❌ Error sending session message:', err);
                     } finally {
-                        // Cleanup only runs after all delays above are done
                         await cleanup('session_complete');
                     }
                 }
@@ -194,7 +196,7 @@ router.get('/', async (req, res) => {
 
                     console.log(`🔌 Connection closed for ${num} — code: ${statusCode}`);
 
-                    // ✅ If session already completed or we're cleaning up, do not reconnect
+                    // Do not reconnect if session already done or cleaning up
                     if (sessionCompleted || isCleaningUp) {
                         await cleanup('already_complete');
                         return;
@@ -214,7 +216,7 @@ router.get('/', async (req, res) => {
                         return;
                     }
 
-                    // ✅ Only retry if pairing code was sent and session isn't complete yet
+                    // Only retry if pairing code was sent and session isn't complete
                     if (pairingCodeSent && !sessionCompleted) {
                         reconnectAttempts++;
                         console.log(`🔄 Reconnecting (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
@@ -226,7 +228,6 @@ router.get('/', async (req, res) => {
                 }
             });
 
-            // ✅ Request pairing code only if not yet registered and not already sent
             if (!sock.authState.creds.registered && !pairingCodeSent && !isCleaningUp) {
                 await delay(1500);
 
@@ -256,7 +257,6 @@ router.get('/', async (req, res) => {
 
             sock.ev.on('creds.update', saveCreds);
 
-            // Session timeout watchdog
             timeoutHandle = setTimeout(async () => {
                 if (!sessionCompleted && !isCleaningUp) {
                     console.log(`⏰ Session timeout for ${num}`);
