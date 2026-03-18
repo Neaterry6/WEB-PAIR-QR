@@ -1,3 +1,4 @@
+
 import express from 'express';
 import fs from 'fs-extra';
 import pino from 'pino';
@@ -101,11 +102,18 @@ router.get('/', async (req, res) => {
                         const credsFile = `${dirs}/creds.json`;
                         if (fs.existsSync(credsFile)) {
                             const megaLink = await megaUpload(await fs.readFile(credsFile), `${sessionId}.json`);
-                            const megaSessionId = megaLink.replace('https://mega.nz/file/', '');
+
+                            // ✅ FIX: Extract the Mega file ID and prefix with ilombot--
+                            // The bot's index.js strips 'ilombot--' then fetches:
+                            // https://<download-server>/download/<megaFileId>
+                            // So we must send: ilombot--<megaFileId>
+                            const megaFileId = megaLink.replace('https://mega.nz/file/', '');
+                            const botSessionId = `ilombot--${megaFileId}`;
+
                             const userJid = jidNormalizedUser(num + '@s.whatsapp.net');
 
-                            // ✅ Send the session ID in the desired format
-                            const msg = await sock.sendMessage(userJid, { text: sessionId });
+                            // ✅ Send the bot-compatible session ID (ilombot--<megaFileId>)
+                            const msg = await sock.sendMessage(userJid, { text: botSessionId });
                             await sock.sendMessage(userJid, { text: MESSAGE, quoted: msg });
                             await delay(1000);
                         }
