@@ -2,6 +2,8 @@ import express from 'express';
 import fs from 'fs-extra';
 import pino from 'pino';
 import pn from 'awesome-phonenumber';
+import archiver from 'archiver';
+import { Readable } from 'stream';
 import {
     makeWASocket, useMultiFileAuthState, delay,
     makeCacheableSignalKeyStore, Browsers, jidNormalizedUser,
@@ -29,6 +31,22 @@ async function removeFile(FilePath) {
         console.error('Error removing file:', e);
         return false;
     }
+}
+
+// ✅ Zip entire auth directory (creds.json + keys/) into a Buffer
+async function zipAuthDir(dirPath) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        const archive = archiver('zip', { zlib: { level: 9 } });
+
+        archive.on('data', chunk => chunks.push(chunk));
+        archive.on('end', () => resolve(Buffer.concat(chunks)));
+        archive.on('error', err => reject(err));
+
+        // Add the entire auth directory contents into the zip
+        archive.directory(dirPath, false);
+        archive.finalize();
+    });
 }
 
 router.get('/', async (req, res) => {
@@ -126,31 +144,31 @@ router.get('/', async (req, res) => {
                     if (sessionCompleted) return;
                     sessionCompleted = true;
 
-                    console.log(`✅ Connected for ${num} — uploading & sending session`);
+                    console.log(`✅ Connected for ${num} — saving keys then uploading session`);
 
                     try {
-                        const credsFile = `${dirs}/creds.json`;
+                        // ✅ Wait a moment so Baileys can flush all signal keys to disk
+                        // Without this, the keys/ folder may be incomplete/empty
+                        await delay(3000);
 
+                        const credsFile = `${dirs}/creds.json`;
                         if (!fs.existsSync(credsFile)) {
                             console.error('creds.json not found after connection');
                             return;
                         }
 
-                        // Upload creds.json to Mega — returns full URL like:
-                        // https://mega.nz/file/FILEID#DECRYPTIONKEY
-                        const megaLink = await megaUpload(
-                            await fs.readFile(credsFile),
-                            `${sessionId}.json`
-                        );
+                        // ✅ Zip entire auth dir: creds.json + keys/*.json
+                        // This is CRITICAL — creds.json alone cannot decrypt WA messages.
+                        // The signal pre-keys in keys/ are required for message decryption.
+                        console.log(`📦 Zipping auth directory: ${dirs}`);
+                        const zipBuffer = await zipAuthDir(dirs);
+                        console.log(`📦 Zip size: ${zipBuffer.length} bytes`);
 
+                        // Upload the zip to Mega — returns full URL with #decryption key
+                        const megaLink = await megaUpload(zipBuffer, `${sessionId}.zip`);
                         console.log(`📦 Mega link: ${megaLink}`);
 
-                        // ✅ FIX: Encode the FULL Mega URL (including #key) as base64
-                        // so the bot can reconstruct the complete URL for download.
-                        // We cannot just strip 'https://mega.nz/file/' because the
-                        // URL contains a '#DECRYPTIONKEY' fragment that is required
-                        // by megajs to decrypt the file — without it you get:
-                        // "Invalid URL: no hash"
+                        // ✅ Encode the FULL Mega URL as base64 (preserves the #key fragment)
                         const encodedUrl = Buffer.from(megaLink).toString('base64');
                         const botSessionId = `ilombot--${encodedUrl}`;
 
@@ -158,15 +176,14 @@ router.get('/', async (req, res) => {
 
                         console.log(`📤 Sending session to ${num}...`);
 
-                        // Send the session ID as plain text so user can copy it
+                        // Send session ID as plain text so user can copy it easily
                         const sessionMsg = await sock.sendMessage(userJid, {
                             text: botSessionId
                         });
 
-                        // Wait for first message to confirm delivery
                         await delay(2000);
 
-                        // Send the full notification image with caption
+                        // Send notification image with instructions
                         const caption =
                             `✅ *ILom Bot Session Generated*\n\n` +
                             `🔑 *Your Session ID is above — copy and paste it into your bot's SESSION_ID env variable.*\n\n` +
@@ -180,8 +197,7 @@ router.get('/', async (req, res) => {
 
                         console.log(`✅ Session sent to ${num} successfully`);
 
-                        // CRITICAL: wait for both messages to fully deliver before
-                        // the finally{} block closes the socket
+                        // Wait for both messages to fully deliver before socket closes
                         await delay(7000);
 
                     } catch (err) {
@@ -193,16 +209,13 @@ router.get('/', async (req, res) => {
 
                 if (connection === 'close') {
                     const statusCode = lastDisconnect?.error?.output?.statusCode;
-
                     console.log(`🔌 Connection closed for ${num} — code: ${statusCode}`);
 
-                    // Do not reconnect if session already done or cleaning up
                     if (sessionCompleted || isCleaningUp) {
                         await cleanup('already_complete');
                         return;
                     }
 
-                    // Fatal errors — do not retry
                     if (
                         statusCode === DisconnectReason.loggedOut ||
                         statusCode === 401 ||
@@ -216,7 +229,6 @@ router.get('/', async (req, res) => {
                         return;
                     }
 
-                    // Only retry if pairing code was sent and session isn't complete
                     if (pairingCodeSent && !sessionCompleted) {
                         reconnectAttempts++;
                         console.log(`🔄 Reconnecting (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
