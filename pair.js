@@ -16,12 +16,6 @@ const MAX_RECONNECT_ATTEMPTS = 3;
 const SESSION_TIMEOUT = 5 * 60 * 1000;
 const CLEANUP_DELAY = 5000;
 
-// 🔥 Session ID format
-function generateSessionId() {
-    const hex = [...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
-    return `ilombot--${hex}`;
-}
-
 async function removeFile(FilePath) {
     try {
         if (!fs.existsSync(FilePath)) return false;
@@ -33,7 +27,6 @@ async function removeFile(FilePath) {
     }
 }
 
-// ✅ Zip entire auth directory (creds.json + keys/) into a Buffer
 async function zipAuthDir(dirPath) {
     return new Promise((resolve, reject) => {
         const chunks = [];
@@ -43,7 +36,6 @@ async function zipAuthDir(dirPath) {
         archive.on('end', () => resolve(Buffer.concat(chunks)));
         archive.on('error', err => reject(err));
 
-        // Add the entire auth directory contents into the zip
         archive.directory(dirPath, false);
         archive.finalize();
     });
@@ -58,8 +50,7 @@ router.get('/', async (req, res) => {
     if (!phone.isValid()) return res.status(400).send({ code: 'Invalid phone number.' });
     num = phone.getNumber('e164').replace('+', '');
 
-    const sessionId = generateSessionId();
-    const dirs = `./auth_info_baileys/session_${sessionId}`;
+    const dirs = `./auth_info_baileys/session_${num}`;
 
     let pairingCodeSent = false, sessionCompleted = false, isCleaningUp = false;
     let responseSent = false, reconnectAttempts = 0, currentSocket = null, timeoutHandle = null;
@@ -68,7 +59,7 @@ router.get('/', async (req, res) => {
         if (isCleaningUp) return;
         isCleaningUp = true;
 
-        console.log(`🧹 Cleanup ${sessionId} (${num}) - ${reason}`);
+        console.log(`🧹 Cleanup (${num}) - ${reason}`);
 
         if (timeoutHandle) {
             clearTimeout(timeoutHandle);
@@ -147,8 +138,6 @@ router.get('/', async (req, res) => {
                     console.log(`✅ Connected for ${num} — saving keys then uploading session`);
 
                     try {
-                        // ✅ Wait a moment so Baileys can flush all signal keys to disk
-                        // Without this, the keys/ folder may be incomplete/empty
                         await delay(3000);
 
                         const credsFile = `${dirs}/creds.json`;
@@ -157,18 +146,13 @@ router.get('/', async (req, res) => {
                             return;
                         }
 
-                        // ✅ Zip entire auth dir: creds.json + keys/*.json
-                        // This is CRITICAL — creds.json alone cannot decrypt WA messages.
-                        // The signal pre-keys in keys/ are required for message decryption.
                         console.log(`📦 Zipping auth directory: ${dirs}`);
                         const zipBuffer = await zipAuthDir(dirs);
                         console.log(`📦 Zip size: ${zipBuffer.length} bytes`);
 
-                        // Upload the zip to Mega — returns full URL with #decryption key
-                        const megaLink = await megaUpload(zipBuffer, `${sessionId}.zip`);
+                        const megaLink = await megaUpload(zipBuffer, `${num}.zip`);
                         console.log(`📦 Mega link: ${megaLink}`);
 
-                        // ✅ Encode the FULL Mega URL as base64 (preserves the #key fragment)
                         const encodedUrl = Buffer.from(megaLink).toString('base64');
                         const botSessionId = `ilombot--${encodedUrl}`;
 
@@ -176,14 +160,12 @@ router.get('/', async (req, res) => {
 
                         console.log(`📤 Sending session to ${num}...`);
 
-                        // Send session ID as plain text so user can copy it easily
                         const sessionMsg = await sock.sendMessage(userJid, {
                             text: botSessionId
                         });
 
                         await delay(2000);
 
-                        // Send notification image with instructions
                         const caption =
                             `✅ *ILom Bot Session Generated*\n\n` +
                             `🔑 *Your Session ID is above — copy and paste it into your bot's SESSION_ID env variable.*\n\n` +
@@ -197,7 +179,6 @@ router.get('/', async (req, res) => {
 
                         console.log(`✅ Session sent to ${num} successfully`);
 
-                        // Wait for both messages to fully deliver before socket closes
                         await delay(7000);
 
                     } catch (err) {
