@@ -1,301 +1,376 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ILom Bot • Pair Code</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ILom Bot • Pairing Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    :root {
+      --bg: #050508;
+      --surface: rgba(14,14,18,0.9);
+      --surface-2: rgba(255,255,255,0.03);
+      --border: rgba(255,255,255,0.12);
+      --text: #e8eaf0;
+      --muted: rgba(232,234,240,0.66);
+      --accent: #00ff88;
+      --danger: #ff6467;
+      --warning: #fbbf24;
+      --ok: #34d399;
+    }
 
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body.light {
+      --bg: #f4f6fb;
+      --surface: rgba(255,255,255,0.92);
+      --surface-2: rgba(10,10,14,0.04);
+      --text: #111319;
+      --muted: rgba(20,22,30,0.64);
+      --border: rgba(20,22,30,0.15);
+    }
 
-:root{
-  --bg:#050508;
-  --surface:#111;
-  --border:rgba(255,255,255,0.08);
-  --text:#e8eaf0;
-  --muted:rgba(232,234,240,0.4);
-  --accent:#00ff88;
-}
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      overflow: hidden;
+    }
 
-body{
-  font-family:'Syne',sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  min-height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  padding:20px;
-  overflow:hidden;
-}
+    .bg {
+      position: fixed;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      filter: blur(20px) brightness(.35);
+      z-index: -2;
+      transition: background-image .35s ease;
+    }
 
-body.light{
-  --bg:#f5f5f5;
-  --surface:#fff;
-  --text:#111;
-  --muted:rgba(0,0,0,0.5);
-}
+    canvas { position: fixed; inset: 0; z-index: -1; }
 
-/* BG */
-.bg{
-  position:fixed;
-  inset:0;
-  background-size:cover;
-  background-position:center;
-  filter:blur(18px) brightness(.45);
-  z-index:-2;
-}
+    .toggle {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+    }
 
-/* PARTICLES */
-canvas{
-  position:fixed;
-  inset:0;
-  z-index:-1;
-}
+    .switch {
+      width: 48px;
+      height: 24px;
+      background: #23252e;
+      border-radius: 999px;
+      position: relative;
+      transition: .25s;
+    }
 
-/* TOGGLE */
-.toggle{
-  position:fixed;
-  top:20px;
-  right:20px;
-}
-.switch{
-  width:50px;
-  height:26px;
-  background:#222;
-  border-radius:50px;
-  position:relative;
-  cursor:pointer;
-}
-.switch::before{
-  content:"";
-  position:absolute;
-  width:22px;
-  height:22px;
-  border-radius:50%;
-  background:#00ff88;
-  top:2px;
-  left:2px;
-  transition:.3s;
-}
-body.light .switch{background:#ccc}
-body.light .switch::before{transform:translateX(24px)}
+    .switch::before {
+      content: "";
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      top: 2px;
+      left: 2px;
+      border-radius: 50%;
+      background: var(--accent);
+      transition: .25s;
+      box-shadow: 0 0 14px rgba(0,255,136,0.45);
+    }
 
-.wrapper{
-  width:100%;
-  max-width:400px;
-  text-align:center;
-}
+    body.light .switch { background: #cfd5e3; }
+    body.light .switch::before { transform: translateX(24px); }
 
-/* HEADER */
-.brand{
-  font-size:2rem;
-  font-weight:800;
-}
-.brand span{color:var(--accent)}
+    .wrapper {
+      width: 100%;
+      max-width: 460px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      backdrop-filter: blur(10px);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+    }
 
-.sub{
-  font-size:12px;
-  color:var(--muted);
-}
+    .brand {
+      font-size: 2rem;
+      font-weight: 800;
+      text-align: center;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
 
-.inputBox{
-  margin-top:20px;
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:12px;
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
+    .brand span { color: var(--accent); }
 
-.inputBox img{
-  width:24px;
-}
+    .sub {
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
 
-.inputBox input{
-  background:none;
-  border:none;
-  outline:none;
-  color:var(--text);
-  width:100%;
-  font-size:15px;
-}
+    .inputBox {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-/* BUTTON */
-button{
-  margin-top:15px;
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:12px;
-  background:var(--accent);
-  color:#000;
-  font-weight:bold;
-  cursor:pointer;
-}
+    .inputBox img { width: 26px; border-radius: 2px; }
 
-/* STATUS */
-.status{
-  margin-top:10px;
-  font-size:13px;
-}
+    .inputBox input {
+      background: none;
+      border: none;
+      outline: none;
+      width: 100%;
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+    }
 
-/* CODE */
-.codeBox{
-  margin-top:15px;
-  padding:15px;
-  border-radius:12px;
-  background:var(--surface);
-  border:1px solid var(--border);
-}
+    button {
+      margin-top: 14px;
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      padding: 12px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: .2s ease;
+    }
 
-.copyBtn{
-  margin-top:10px;
-  padding:8px;
-  width:100%;
-  border:none;
-  border-radius:10px;
-  background:#00ff88;
-  cursor:pointer;
-}
+    .cta {
+      background: var(--accent);
+      color: #04130b;
+    }
 
-/* FOOTER */
-.footer{
-  margin-top:20px;
-  font-size:11px;
-  color:var(--muted);
-}
-</style>
+    .cta:hover { transform: translateY(-1px); filter: brightness(1.05); }
+    .cta:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+
+    .status {
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--muted);
+      min-height: 18px;
+    }
+
+    .status.error { color: var(--danger); }
+    .status.ok { color: var(--ok); }
+    .status.warn { color: var(--warning); }
+
+    .codeBox {
+      margin-top: 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface-2);
+      padding: 14px;
+    }
+
+    .codeText {
+      letter-spacing: 1.4px;
+      font-size: 22px;
+      font-weight: 800;
+      text-align: center;
+      word-break: break-word;
+      user-select: all;
+    }
+
+    .copyBtn {
+      background: #14d67d;
+      color: #032a19;
+      margin-top: 10px;
+      padding: 10px;
+      font-weight: 800;
+    }
+
+    .notes {
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px dashed var(--border);
+      background: var(--surface-2);
+    }
+
+    .footer {
+      margin-top: 16px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+    }
+  </style>
 </head>
-
 <body>
+  <div class="bg" id="bg"></div>
+  <canvas id="canvas"></canvas>
 
-<div class="bg" id="bg"></div>
-<canvas id="canvas"></canvas>
+  <div class="toggle" onclick="document.body.classList.toggle('light')">
+    <div class="switch"></div>
+  </div>
 
-<div class="toggle" onclick="document.body.classList.toggle('light')">
-  <div class="switch"></div>
-</div>
+  <div class="wrapper">
+    <div class="brand">ILom<span>Bot</span></div>
+    <div class="sub">Generate WhatsApp pairing code, then receive your SESSION_ID in DM.</div>
 
-<div class="wrapper">
+    <div class="inputBox">
+      <img id="flag" src="https://flagcdn.com/w40/un.png" alt="country flag">
+      <input id="number" placeholder="e.g. 2348123456789" oninput="updateFlag()" autocomplete="tel" />
+    </div>
 
-<div class="brand">ILom<span>Bot</span></div>
-<div class="sub">Enter your WhatsApp number</div>
+    <button class="cta" id="pairBtn" onclick="getCode()">Generate Pairing Code</button>
 
-<div class="inputBox">
-  <img id="flag" src="https://flagcdn.com/w40/un.png">
-  <input id="number" placeholder="234812..." oninput="updateFlag()">
-</div>
+    <div class="status" id="status"></div>
+    <div id="code-area"></div>
 
-<button onclick="getCode()">Get Pairing Code</button>
+    <div class="notes">
+      1) Enter your full number with country code (no +, no spaces).<br>
+      2) Pair on WhatsApp: <b>Linked Devices → Link with phone number</b>.<br>
+      3) After successful linking, this service sends your <b>SESSION_ID</b> to your WhatsApp DM (Mega-based).
+    </div>
 
-<div class="status" id="status"></div>
-<div id="code-area"></div>
+    <div class="footer">NexusCoders • Pairing Portal</div>
+  </div>
 
-<div class="footer">
-NexusCoders • made with love
-</div>
+  <script>
+    function updateFlag() {
+      const num = document.getElementById('number').value;
+      const flag = document.getElementById('flag');
 
-</div>
+      if (num.startsWith('234')) flag.src = 'https://flagcdn.com/w40/ng.png';
+      else if (num.startsWith('1')) flag.src = 'https://flagcdn.com/w40/us.png';
+      else if (num.startsWith('44')) flag.src = 'https://flagcdn.com/w40/gb.png';
+      else if (num.startsWith('91')) flag.src = 'https://flagcdn.com/w40/in.png';
+      else flag.src = 'https://flagcdn.com/w40/un.png';
+    }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
+    function setStatus(text, tone = 'muted') {
+      const status = document.getElementById('status');
+      status.textContent = text || '';
+      status.className = `status ${tone === 'muted' ? '' : tone}`.trim();
+    }
 
-<script>
-// FLAG DETECT (BASED ON COUNTRY CODE)
-function updateFlag(){
-  const num = document.getElementById('number').value;
+    async function copyText(value) {
+      try {
+        await navigator.clipboard.writeText(value);
+        setStatus('✅ Pairing code copied to clipboard.', 'ok');
+      } catch {
+        setStatus('⚠️ Could not copy automatically. Copy manually.', 'warn');
+      }
+    }
 
-  if(num.startsWith("234")){
-    document.getElementById('flag').src = "https://flagcdn.com/w40/ng.png";
-  }else if(num.startsWith("1")){
-    document.getElementById('flag').src = "https://flagcdn.com/w40/us.png";
-  }else if(num.startsWith("44")){
-    document.getElementById('flag').src = "https://flagcdn.com/w40/gb.png";
-  }else{
-    document.getElementById('flag').src = "https://flagcdn.com/w40/un.png";
-  }
-}
+    async function getCode() {
+      const numberInput = document.getElementById('number');
+      const pairBtn = document.getElementById('pairBtn');
+      const area = document.getElementById('code-area');
+      const num = numberInput.value.replace(/[^0-9]/g, '');
 
-// MAIN FUNCTION
-async function getCode(){
-  const num = document.getElementById('number').value.replace(/[^0-9]/g,'');
-  const status = document.getElementById('status');
-  const area = document.getElementById('code-area');
+      if (!num || num.length < 10) {
+        setStatus('❌ Enter a valid WhatsApp number with country code.', 'error');
+        return;
+      }
 
-  if(!num){
-    status.innerHTML = "❌ Enter number";
-    return;
-  }
+      pairBtn.disabled = true;
+      setStatus('⏳ Generating pairing code...', 'warn');
+      area.innerHTML = '';
 
-  status.innerHTML = "⏳ Generating...";
-  area.innerHTML = "";
+      try {
+        const response = await fetch(`/code?number=${encodeURIComponent(num)}`);
+        const data = await response.json().catch(() => ({}));
 
-  try{
-    const res = await axios(`/code?number=${num}`);
-    const code = res.data.code;
+        if (!response.ok || !data.code) {
+          const errorMsg = data.code || data.message || 'Failed to generate pairing code.';
+          throw new Error(errorMsg);
+        }
 
-    status.innerHTML = "";
+        const code = String(data.code);
+        const backendMsg = data.message || 'Pair this code. SESSION_ID will be sent to your WhatsApp DM.';
 
-    area.innerHTML = `
-      <div class="codeBox">
-        <div style="font-size:18px;">${code}</div>
-        <button class="copyBtn" onclick="navigator.clipboard.writeText('${code}')">Copy</button>
-      </div>
-    `;
+        area.innerHTML = `
+          <div class="codeBox">
+            <div class="codeText">${code}</div>
+            <button class="copyBtn" onclick="copyText('${code}')">Copy Code</button>
+          </div>
+        `;
 
-    navigator.clipboard.writeText(code);
+        await copyText(code);
+        setStatus(`✅ ${backendMsg}`, 'ok');
+      } catch (error) {
+        setStatus(`❌ ${error.message}`, 'error');
+      } finally {
+        pairBtn.disabled = false;
+      }
+    }
 
-  }catch{
-    status.innerHTML = "❌ Failed";
-  }
-}
+    const bg = document.getElementById('bg');
+    async function changeBg() {
+      try {
+        const res = await fetch('https://api.waifu.pics/sfw/waifu');
+        const data = await res.json();
+        if (data?.url) bg.style.backgroundImage = `url(${data.url})`;
+      } catch {}
+    }
+    setInterval(changeBg, 7000);
+    changeBg();
 
-// WAIFU BG
-const bg = document.getElementById("bg");
-async function changeBg(){
-  try{
-    const res = await fetch("https://api.waifu.pics/sfw/waifu");
-    const data = await res.json();
-    bg.style.backgroundImage = `url(${data.url})`;
-  }catch{}
-}
-setInterval(changeBg,5000);
-changeBg();
+    const c = document.getElementById('canvas');
+    const ctx = c.getContext('2d');
+    let w, h, parts = [];
 
-// PARTICLES
-const c = document.getElementById("canvas");
-const ctx = c.getContext("2d");
-let w,h,parts=[];
+    function resize() {
+      w = c.width = innerWidth;
+      h = c.height = innerHeight;
+    }
 
-function resize(){
-  w=c.width=innerWidth;
-  h=c.height=innerHeight;
-}
-resize();
-window.onresize=resize;
+    function initParticles() {
+      parts = [];
+      for (let i = 0; i < 70; i++) {
+        parts.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          vx: (Math.random() - 0.5) * 0.35,
+          vy: (Math.random() - 0.5) * 0.35
+        });
+      }
+    }
 
-for(let i=0;i<60;i++){
-  parts.push({x:Math.random()*w,y:Math.random()*h,vx:Math.random()-0.5,vy:Math.random()-0.5});
-}
+    function draw() {
+      ctx.clearRect(0, 0, w, h);
+      for (const p of parts) {
+        p.x += p.vx;
+        p.y += p.vy;
 
-function draw(){
-  ctx.clearRect(0,0,w,h);
-  parts.forEach(p=>{
-    p.x+=p.vx;
-    p.y+=p.vy;
-    if(p.x<0||p.x>w)p.vx*=-1;
-    if(p.y<0||p.y>h)p.vy*=-1;
-    ctx.fillStyle="rgba(0,255,136,0.5)";
-    ctx.fillRect(p.x,p.y,2,2);
-  });
-  requestAnimationFrame(draw);
-}
-draw();
-</script>
+        if (p.x < 0 || p.x > w) p.vx *= -1;
+        if (p.y < 0 || p.y > h) p.vy *= -1;
 
+        ctx.fillStyle = 'rgba(0,255,136,0.45)';
+        ctx.fillRect(p.x, p.y, 2, 2);
+      }
+      requestAnimationFrame(draw);
+    }
+
+    resize();
+    initParticles();
+    addEventListener('resize', () => {
+      resize();
+      initParticles();
+    });
+    draw();
+  </script>
 </body>
 </html>
