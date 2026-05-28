@@ -2,7 +2,6 @@ import express from 'express';
 import fs from 'fs-extra';
 import pino from 'pino';
 import pn from 'awesome-phonenumber';
-import archiver from 'archiver';
 import {
     makeWASocket,
     useMultiFileAuthState,
@@ -13,7 +12,6 @@ import {
     fetchLatestBaileysVersion,
     DisconnectReason
 } from '@whiskeysockets/baileys';
-import { upload as megaUpload } from './mega.js';
 
 const router = express.Router();
 const MAX_RECONNECT_ATTEMPTS = 3;
@@ -29,30 +27,6 @@ async function removeFile(filePath) {
         console.error('Error removing file:', error);
         return false;
     }
-}
-
-async function zipAuthDir(dirPath) {
-    return new Promise((resolve, reject) => {
-        const chunks = [];
-        const archive = archiver('zip', { zlib: { level: 9 } });
-
-        archive.on('data', (chunk) => chunks.push(chunk));
-        archive.on('end', () => resolve(Buffer.concat(chunks)));
-        archive.on('warning', (err) => {
-            if (err?.code !== 'ENOENT') reject(err);
-        });
-        archive.on('error', (err) => reject(err));
-
-        archive.directory(dirPath, false);
-        archive.finalize();
-    });
-}
-
-function encodeSessionId(megaLink) {
-    // URL-safe base64 so SESSION_ID can be copied into env vars reliably.
-    const base64 = Buffer.from(megaLink, 'utf8').toString('base64');
-    const base64Url = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-    return `ilombot--${base64Url}`;
 }
 
 router.get('/', async (req, res) => {
@@ -152,7 +126,7 @@ router.get('/', async (req, res) => {
                     if (sessionCompleted) return;
                     sessionCompleted = true;
 
-                    console.log(`✅ Connected for ${num} — saving keys then uploading session`);
+                    console.log(`✅ Connected for ${num} — saving keys then sending creds.json`);
 
                     try {
                         await delay(3000);
@@ -163,42 +137,25 @@ router.get('/', async (req, res) => {
                             throw new Error('creds.json not found after connection');
                         }
 
-                        console.log(`📦 Zipping auth directory: ${dirs}`);
-                        const zipBuffer = await zipAuthDir(dirs);
-                        console.log(`📦 Zip size: ${zipBuffer.length} bytes`);
-
-                        const megaLink = await megaUpload(zipBuffer, `${num}.zip`);
-                        console.log(`📦 Mega link generated for ${num}`);
-
-                        const botSessionId = encodeSessionId(megaLink);
+                        const credsBuffer = await fs.readFile(credsFile);
                         const userJid = jidNormalizedUser(`${num}@s.whatsapp.net`);
 
-                        console.log(`📤 Sending session to ${num}...`);
-                        const sessionMsg = await sock.sendMessage(userJid, { text: botSessionId });
+                        console.log(`📤 Sending creds.json to ${num}...`);
+                        await sock.sendMessage(userJid, {
+                            document: credsBuffer,
+                            fileName: 'creds.json',
+                            mimetype: 'application/json',
+                            caption:
+                                `✅ *Titans Devs Pair Session Generated*\n\n` +
+                                `Your WhatsApp session is attached as *creds.json*.\n` +
+                                `Download this file and place it where your bot expects its credentials.\n\n` +
+                                `📲 If you do not see it, check archived chats on WhatsApp.`
+                        });
 
-                        await delay(1200);
-
-                        const caption =
-                            `✅ *ILom Bot Session Generated*\n\n` +
-                            `🔐 *Your SESSION_ID is in the message above.*\n` +
-                            `Copy it exactly and paste into your deploy env as *SESSION_ID*.\n\n` +
-                            `☁️ Session storage: *Mega*\n` +
-                            `📲 If you do not see it, check archived chats on WhatsApp.\n\n` +
-                            `💻 GitHub:\nhttps://github.com/GlobalTechInfo/WEB-PAIR-QR`;
-
-                        await sock.sendMessage(
-                            userJid,
-                            {
-                                image: { url: 'https://files.catbox.moe/ne3i3i.jpeg' },
-                                caption
-                            },
-                            { quoted: sessionMsg }
-                        );
-
-                        console.log(`✅ Session sent to ${num} successfully`);
+                        console.log(`✅ creds.json sent to ${num} successfully`);
                         await delay(4000);
                     } catch (err) {
-                        console.error('❌ Error generating or sending session:', err);
+                        console.error('❌ Error generating or sending creds.json:', err);
                     } finally {
                         await cleanup('session_complete');
                     }
@@ -252,7 +209,7 @@ router.get('/', async (req, res) => {
                         res.send({
                             ok: true,
                             code,
-                            message: 'Pair this code in WhatsApp. After linking, your SESSION_ID will be sent to your WhatsApp DM.'
+                            message: 'Pair this code in WhatsApp. After linking, your creds.json file will be sent to your WhatsApp DM.'
                         });
                     }
                 } catch (err) {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ILom Bot • Pairing Portal</title>
+  <title>Titans Devs Pair • Pairing Portal</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -225,8 +225,8 @@
   </div>
 
   <div class="wrapper">
-    <div class="brand">ILom<span>Bot</span></div>
-    <div class="sub">Generate WhatsApp pairing code, then receive your SESSION_ID in DM.</div>
+    <div class="brand">Titans<span>Devs Pair</span></div>
+    <div class="sub">Generate a WhatsApp pairing code, then receive your creds.json file in DM.</div>
 
     <div class="inputBox">
       <img id="flag" src="https://flagcdn.com/w40/un.png" alt="country flag">
@@ -241,10 +241,10 @@
     <div class="notes">
       1) Enter your full number with country code (no +, no spaces).<br>
       2) Pair on WhatsApp: <b>Linked Devices → Link with phone number</b>.<br>
-      3) After successful linking, this service sends your <b>SESSION_ID</b> to your WhatsApp DM (Mega-based).
+      3) After successful linking, this service sends your <b>creds.json</b> file to your WhatsApp DM.
     </div>
 
-    <div class="footer">NexusCoders • Pairing Portal</div>
+    <div class="footer">Titans Devs Pair • Pairing Portal</div>
   </div>
 
   <script>
@@ -299,7 +299,7 @@
         }
 
         const code = String(data.code);
-        const backendMsg = data.message || 'Pair this code. SESSION_ID will be sent to your WhatsApp DM.';
+        const backendMsg = data.message || 'Pair this code. Your creds.json file will be sent to your WhatsApp DM.';
 
         area.innerHTML = `
           <div class="codeBox">

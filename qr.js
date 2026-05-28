@@ -14,9 +14,9 @@ const SESSION_TIMEOUT = 60000;
 
 // 🔥 Minimal, branded success message
 const MESSAGE = `
-✅ *ILom Bot Connected!*
+✅ *Titans Devs Pair Connected!*
 
-🔑 Your Session ID will allow you to pair with ILom Bot
+🔑 Your Session ID will allow you to pair with Titans Devs Pair
 
 📢 Channel: https://whatsapp.com/channel/0029VagJIAr3bbVBCpEkAM07
 💻 GitHub: https://github.com/NexusCoders/ILom-Bot
@@ -167,7 +167,7 @@ router.get('/', async (req, res) => {
                             await sock.sendMessage(userJid, {
                                 image: { url: "https://files.catbox.moe/ne3i3i.jpeg" },
                                 caption: `
-✅ *ILom Bot Connected!*
+✅ *Titans Devs Pair Connected!*
 
 🔑 Session ID: ${botSessionId}
 
