@@ -4,13 +4,14 @@ import pino from 'pino';
 import QRCode from 'qrcode';
 import {
     makeWASocket, useMultiFileAuthState, makeCacheableSignalKeyStore,
-    Browsers, jidNormalizedUser, fetchLatestBaileysVersion, delay, DisconnectReason
+    Browsers, jidNormalizedUser, delay, DisconnectReason
 } from '@whiskeysockets/baileys';
 import { upload as megaUpload } from './mega.js';
+import { getBaileysVersion, sessionDirectory } from './baileys-utils.js';
 
 const router = express.Router();
 const MAX_RECONNECT_ATTEMPTS = 3;
-const SESSION_TIMEOUT = 60000;
+const SESSION_TIMEOUT = 55 * 1000;
 
 // 🔥 Minimal, branded success message
 const MESSAGE = `
@@ -42,8 +43,9 @@ function randomMegaId(len = 6, numLen = 4) {
 
 router.get('/', async (req, res) => {
     const sessionId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
-    const dirs = `./qr_sessions/session_${sessionId}`;
-    if (!fs.existsSync('./qr_sessions')) await fs.mkdir('./qr_sessions', { recursive: true });
+    const dirs = sessionDirectory('qr_sessions', `session_${sessionId}`);
+    const qrRoot = sessionDirectory('qr_sessions');
+    if (!fs.existsSync(qrRoot)) await fs.mkdir(qrRoot, { recursive: true });
 
     let qrGenerated = false;
     let sessionCompleted = false;
@@ -90,7 +92,7 @@ router.get('/', async (req, res) => {
         const { state, saveCreds } = await useMultiFileAuthState(dirs);
 
         try {
-            const { version } = await fetchLatestBaileysVersion();
+            const version = await getBaileysVersion();
 
             if (currentSocket) {
                 try {

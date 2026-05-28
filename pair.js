@@ -9,9 +9,9 @@ import {
     makeCacheableSignalKeyStore,
     Browsers,
     jidNormalizedUser,
-    fetchLatestBaileysVersion,
     DisconnectReason
 } from '@whiskeysockets/baileys';
+import { getBaileysVersion, sessionDirectory } from './baileys-utils.js';
 
 const router = express.Router();
 const MAX_RECONNECT_ATTEMPTS = 3;
@@ -38,7 +38,7 @@ router.get('/', async (req, res) => {
     if (!phone.isValid()) return res.status(400).send({ ok: false, code: 'Invalid phone number.' });
     num = phone.getNumber('e164').replace('+', '');
 
-    const dirs = `./auth_info_baileys/session_${num}`;
+    const dirs = sessionDirectory('auth_info_baileys', `session_${num}`);
 
     let pairingCodeSent = false;
     let sessionCompleted = false;
@@ -88,7 +88,7 @@ router.get('/', async (req, res) => {
             if (!fs.existsSync(dirs)) await fs.mkdir(dirs, { recursive: true });
 
             const { state, saveCreds } = await useMultiFileAuthState(dirs);
-            const { version } = await fetchLatestBaileysVersion();
+            const version = await getBaileysVersion();
 
             if (currentSocket) {
                 try {

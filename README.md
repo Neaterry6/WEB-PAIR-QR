@@ -124,3 +124,18 @@ Note: Make Sure Add Your Email And Password ( Required In mega.js ) Before Runni
 | [![Qasim Ali](https://github.com/GlobalTechInfo.png?size=100)](https://github.com/GlobalTechInfo) |
 | --- |
 | [Qasim Ali](https://github.com/GlobalTechInfo) |
+
+## Vercel deployment
+
+This project includes `vercel.json` so Vercel runs `index.js` with the Node serverless builder and routes every request to the Express app.
+
+1. Push the repo to GitHub and import it in Vercel.
+2. Use **Node.js 20.x or newer** in the Vercel project settings.
+3. Keep the install command as `npm install` or `npm ci`; all runtime modules are listed in `package.json`.
+4. Add these environment variables in Vercel:
+   - `MEGA_EMAIL` — your Mega account email.
+   - `MEGA_PASSWORD` — your Mega account password.
+   - Optional: `BAILEYS_VERSION` — comma-separated WhatsApp web version, for example `2,3000,1023223821`. If Baileys cannot fetch the latest version from Vercel, the app falls back automatically.
+5. Redeploy after changing environment variables.
+
+> Vercel is serverless. Pairing and QR generation open a temporary WhatsApp websocket and must finish before the function timeout. If you still see intermittent timeouts on Vercel, deploy the same repo on a long-running Node host such as Render, Railway, Koyeb, VPS, or Docker for the most reliable pairing experience.
