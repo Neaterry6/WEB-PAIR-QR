@@ -37,7 +37,7 @@ app.use('/', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`YoutTube: @GlobalTechInfo\nGitHub: @GlobalTechInfo\nServer running on http://localhost:${PORT}`);
+    console.log(`Titans Devs Pair server running on http://localhost:${PORT}`);
 });
 
 export default app;
