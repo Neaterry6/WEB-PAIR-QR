@@ -4,132 +4,169 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Titans Devs Pair • Pairing Portal</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #050508;
-      --surface: rgba(14,14,18,0.9);
-      --surface-2: rgba(255,255,255,0.03);
-      --border: rgba(255,255,255,0.12);
-      --text: #e8eaf0;
-      --muted: rgba(232,234,240,0.66);
-      --accent: #00ff88;
-      --danger: #ff6467;
-      --warning: #fbbf24;
-      --ok: #34d399;
+      color-scheme: dark;
+      --bg: #07050a;
+      --surface: rgba(18, 13, 22, 0.86);
+      --surface-2: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.13);
+      --text: #fff8fc;
+      --muted: rgba(255,248,252,0.64);
+      --accent: #ff4fb8;
+      --accent-2: #ff8ed8;
+      --danger: #ff6b8f;
+      --warning: #ffd166;
+      --ok: #55efc4;
+      --shadow: 0 24px 80px rgba(0,0,0,0.45);
     }
 
     body.light {
-      --bg: #f4f6fb;
-      --surface: rgba(255,255,255,0.92);
-      --surface-2: rgba(10,10,14,0.04);
-      --text: #111319;
-      --muted: rgba(20,22,30,0.64);
-      --border: rgba(20,22,30,0.15);
+      color-scheme: light;
+      --bg: #fff7fb;
+      --surface: rgba(255,255,255,0.88);
+      --surface-2: rgba(22,12,19,0.05);
+      --text: #160c13;
+      --muted: rgba(22,12,19,0.62);
+      --border: rgba(22,12,19,0.13);
+      --shadow: 0 24px 70px rgba(255,79,184,0.18);
     }
 
+    html { min-height: 100%; }
+
     body {
-      font-family: 'Syne', sans-serif;
-      background: var(--bg);
+      font-family: 'Syne', system-ui, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(255,79,184,0.26), transparent 32rem),
+        radial-gradient(circle at bottom right, rgba(255,255,255,0.12), transparent 24rem),
+        linear-gradient(135deg, var(--bg), #190d19);
       color: var(--text);
       min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 20px;
-      overflow: hidden;
+      padding: clamp(74px, 9vh, 96px) clamp(16px, 4vw, 32px) clamp(22px, 4vh, 38px);
+      overflow-x: hidden;
     }
 
-    .bg {
+    body.light { background: radial-gradient(circle at top left, rgba(255,79,184,0.2), transparent 32rem), linear-gradient(135deg, #fff7fb, #ffffff); }
+
+    body::before {
+      content: '';
       position: fixed;
       inset: 0;
-      background-size: cover;
-      background-position: center;
-      filter: blur(20px) brightness(.35);
-      z-index: -2;
-      transition: background-image .35s ease;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 54px 54px;
+      mask-image: radial-gradient(circle, black, transparent 78%);
+      pointer-events: none;
     }
 
-    canvas { position: fixed; inset: 0; z-index: -1; }
+    .bg { display: none; }
+    canvas { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
 
     .toggle {
       position: fixed;
       top: 18px;
       right: 18px;
-      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 999px;
-      padding: 6px;
+      padding: 4px;
       cursor: pointer;
-      backdrop-filter: blur(6px);
+      backdrop-filter: blur(16px);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      z-index: 10;
     }
 
     .switch {
-      width: 48px;
-      height: 24px;
-      background: #23252e;
+      width: 64px;
+      height: 34px;
       border-radius: 999px;
       position: relative;
-      transition: .25s;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      color: var(--text);
     }
 
     .switch::before {
-      content: "";
+      content: '';
       position: absolute;
-      width: 20px;
-      height: 20px;
-      top: 2px;
-      left: 2px;
+      width: 28px;
+      height: 28px;
+      top: 3px;
+      left: 3px;
       border-radius: 50%;
-      background: var(--accent);
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
       transition: .25s;
-      box-shadow: 0 0 14px rgba(0,255,136,0.45);
+      box-shadow: 0 10px 24px rgba(255,79,184,0.36);
     }
 
-    body.light .switch { background: #cfd5e3; }
-    body.light .switch::before { transform: translateX(24px); }
+    .switch::after { content: '☾'; justify-self: end; padding-right: 8px; z-index: 1; font-size: 13px; }
+    .switch span { justify-self: start; padding-left: 8px; z-index: 1; font-size: 13px; }
+    body.light .switch::before { transform: translateX(30px); }
 
     .wrapper {
-      width: 100%;
-      max-width: 460px;
+      position: relative;
+      z-index: 1;
+      width: min(100%, 520px);
       border: 1px solid var(--border);
       background: var(--surface);
-      backdrop-filter: blur(10px);
-      border-radius: 18px;
-      padding: 24px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+      backdrop-filter: blur(20px);
+      border-radius: 30px;
+      padding: clamp(22px, 5vw, 34px);
+      box-shadow: var(--shadow);
     }
+
+    .wrapper::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(135deg, rgba(255,79,184,0.13), transparent 42%);
+      pointer-events: none;
+    }
+
+    .brand, .sub, .inputBox, button, .status, .codeBox, .notes, .footer { position: relative; z-index: 1; }
 
     .brand {
-      font-size: 2rem;
+      font-size: clamp(2.2rem, 9vw, 4.6rem);
       font-weight: 800;
       text-align: center;
-      line-height: 1;
-      margin-bottom: 8px;
+      line-height: .9;
+      letter-spacing: -0.07em;
+      margin-bottom: 12px;
     }
 
-    .brand span { color: var(--accent); }
+    .brand span { color: var(--accent); display: block; }
 
     .sub {
       text-align: center;
-      font-size: 13px;
+      font-size: clamp(13px, 2.4vw, 15px);
       color: var(--muted);
-      margin-bottom: 18px;
+      line-height: 1.6;
+      margin: 0 auto 22px;
+      max-width: 400px;
     }
 
     .inputBox {
       background: var(--surface-2);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px 12px;
+      border-radius: 18px;
+      padding: 13px 14px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .inputBox img { width: 26px; border-radius: 2px; }
+    .inputBox:focus-within { border-color: rgba(255,79,184,0.55); box-shadow: 0 0 0 4px rgba(255,79,184,0.11); }
+    .inputBox img { width: 30px; border-radius: 4px; flex: none; }
 
     .inputBox input {
       background: none;
@@ -137,82 +174,69 @@
       outline: none;
       width: 100%;
       color: var(--text);
-      font-size: 15px;
+      font-size: 16px;
       font-family: inherit;
+      min-width: 0;
     }
 
     button {
       margin-top: 14px;
       width: 100%;
       border: none;
-      border-radius: 12px;
-      padding: 12px;
-      font-weight: 700;
+      border-radius: 18px;
+      padding: 14px 16px;
+      font-weight: 800;
       font-family: inherit;
       cursor: pointer;
       transition: .2s ease;
     }
 
-    .cta {
-      background: var(--accent);
-      color: #04130b;
-    }
-
-    .cta:hover { transform: translateY(-1px); filter: brightness(1.05); }
+    .cta { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; box-shadow: 0 18px 34px rgba(255,79,184,0.28); }
+    .cta:hover { transform: translateY(-2px); filter: brightness(1.04); }
     .cta:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
 
-    .status {
-      margin-top: 12px;
-      font-size: 13px;
-      color: var(--muted);
-      min-height: 18px;
-    }
-
+    .status { margin-top: 14px; font-size: 13px; color: var(--muted); min-height: 20px; line-height: 1.45; text-align: center; }
     .status.error { color: var(--danger); }
     .status.ok { color: var(--ok); }
     .status.warn { color: var(--warning); }
 
     .codeBox {
       margin-top: 14px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
+      border: 1px solid rgba(255,79,184,0.24);
+      border-radius: 20px;
       background: var(--surface-2);
-      padding: 14px;
+      padding: 16px;
     }
 
     .codeText {
-      letter-spacing: 1.4px;
-      font-size: 22px;
+      letter-spacing: 2px;
+      font-size: clamp(24px, 7vw, 36px);
       font-weight: 800;
       text-align: center;
       word-break: break-word;
       user-select: all;
+      color: var(--accent);
     }
 
-    .copyBtn {
-      background: #14d67d;
-      color: #032a19;
-      margin-top: 10px;
-      padding: 10px;
-      font-weight: 800;
-    }
+    .copyBtn { background: var(--text); color: var(--bg); margin-top: 12px; padding: 12px; }
 
     .notes {
-      margin-top: 14px;
+      margin-top: 16px;
       font-size: 12px;
       color: var(--muted);
-      line-height: 1.45;
-      padding: 12px;
-      border-radius: 10px;
+      line-height: 1.6;
+      padding: 14px;
+      border-radius: 16px;
       border: 1px dashed var(--border);
       background: var(--surface-2);
     }
 
-    .footer {
-      margin-top: 16px;
-      text-align: center;
-      font-size: 11px;
-      color: var(--muted);
+    .footer { margin-top: 18px; text-align: center; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.08em; }
+    .back-link { display: block; margin-top: 12px; color: var(--muted); text-align: center; font-size: 12px; text-decoration: none; }
+
+    @media (max-width: 420px) {
+      body { align-items: flex-start; }
+      .wrapper { border-radius: 24px; }
     }
   </style>
 </head>
@@ -220,8 +244,8 @@
   <div class="bg" id="bg"></div>
   <canvas id="canvas"></canvas>
 
-  <div class="toggle" onclick="document.body.classList.toggle('light')">
-    <div class="switch"></div>
+  <div class="toggle" onclick="toggleTheme()" aria-label="Toggle dark and light mode" role="button">
+    <div class="switch"><span>☀</span></div>
   </div>
 
   <div class="wrapper">
@@ -245,9 +269,18 @@
     </div>
 
     <div class="footer">Titans Devs Pair • Pairing Portal</div>
+    <a class="back-link" href="/">← back to home</a>
   </div>
 
   <script>
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') document.body.classList.add('light');
+
+    function toggleTheme() {
+      document.body.classList.toggle('light');
+      localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
+    }
+
     function updateFlag() {
       const num = document.getElementById('number').value;
       const flag = document.getElementById('flag');
@@ -317,16 +350,6 @@
       }
     }
 
-    const bg = document.getElementById('bg');
-    async function changeBg() {
-      try {
-        const res = await fetch('https://api.waifu.pics/sfw/waifu');
-        const data = await res.json();
-        if (data?.url) bg.style.backgroundImage = `url(${data.url})`;
-      } catch {}
-    }
-    setInterval(changeBg, 7000);
-    changeBg();
 
     const c = document.getElementById('canvas');
     const ctx = c.getContext('2d');
@@ -358,7 +381,7 @@
         if (p.x < 0 || p.x > w) p.vx *= -1;
         if (p.y < 0 || p.y > h) p.vy *= -1;
 
-        ctx.fillStyle = 'rgba(0,255,136,0.45)';
+        ctx.fillStyle = 'rgba(255,79,184,0.45)';
         ctx.fillRect(p.x, p.y, 2, 2);
       }
       requestAnimationFrame(draw);
