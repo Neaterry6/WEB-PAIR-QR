@@ -19,7 +19,10 @@ const MESSAGE = `
 
 🔑 Your Session ID will allow you to pair with Titans Devs Pair
 
-📢 Channel: https://whatsapp.com/channel/0029VagJIAr3bbVBCpEkAM07
+📢 WhatsApp Channel: https://whatsapp.com/channel/0029VbCSDHB4dTnJjzgcw702
+👥 WhatsApp GC: https://chat.whatsapp.com/FiZzck4I6PG5DW8QwVd9Kj
+📣 Telegram Channel: https://t.me/+AoByGO2_jUZjYTQ8
+🌐 Portfolio: https://portfolio-neaterry6s-projects.vercel.app/
 💻 GitHub: https://github.com/NexusCoders/ILom-Bot
 `;
 
@@ -173,7 +176,10 @@ router.get('/', async (req, res) => {
 
 🔑 Session ID: ${botSessionId}
 
-📢 Channel: https://whatsapp.com/channel/0029VagJIAr3bbVBCpEkAM07
+📢 WhatsApp Channel: https://whatsapp.com/channel/0029VbCSDHB4dTnJjzgcw702
+👥 WhatsApp GC: https://chat.whatsapp.com/FiZzck4I6PG5DW8QwVd9Kj
+📣 Telegram Channel: https://t.me/+AoByGO2_jUZjYTQ8
+🌐 Portfolio: https://portfolio-neaterry6s-projects.vercel.app/
 💻 GitHub: https://github.com/NexusCoders/ILom-Bot
 `.trim()
                             });

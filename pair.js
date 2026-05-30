@@ -149,6 +149,10 @@ router.get('/', async (req, res) => {
                                 `✅ *Titans Devs Pair Session Generated*\n\n` +
                                 `Your WhatsApp session is attached as *creds.json*.\n` +
                                 `Download this file and place it where your bot expects its credentials.\n\n` +
+                                `📢 WhatsApp Channel: https://whatsapp.com/channel/0029VbCSDHB4dTnJjzgcw702\n` +
+                                `👥 WhatsApp GC: https://chat.whatsapp.com/FiZzck4I6PG5DW8QwVd9Kj\n` +
+                                `📣 Telegram Channel: https://t.me/+AoByGO2_jUZjYTQ8\n` +
+                                `🌐 Portfolio: https://portfolio-neaterry6s-projects.vercel.app/\n\n` +
                                 `📲 If you do not see it, check archived chats on WhatsApp.`
                         });
 
